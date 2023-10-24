@@ -1,0 +1,8 @@
+{
+    "addr": ":80",
+    "youtube_api_url": "www.googleapis.com/youtube/v3",
+    "youtube_api_keys": [
+        "AIzaSyAWJfmC4-ZSNK4vQe3UZfN_sdIMA9B7tBQ"
+    ],
+    "db_name": "server.db"
+}

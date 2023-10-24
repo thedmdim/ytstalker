@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ template "head" }}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" integrity="sha512-qveKnGrvOChbSzAdtSs8p69eoLegyh+1hwOMbmpCViIwj7rn4oJjdmMvWOuyQlTOZgTlZA0N2PXA7iA8/2TUYA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js" integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+        <script src="static/js/form.js" defer></script>
+        <title>YouTube Stalker</title>
+    </head>
+    <body>
+        {{ template "header" }}
+        <div id="content">
+            <iframe id="video" src="https://www.youtube.com/embed/" frameborder="0" allowfullscreen></iframe>
+            
+            <div id="video-info">I'm lucky!</div>
+            <div id="vertical"><label>Exclude Vertical<input type="checkbox" /></label></div> 
+
+            <div id="slider"></div>
+            <button id="random">Find Random Video</button>
+        </div>
+        {{ template "footer" }}
+    </body>
+</html>
