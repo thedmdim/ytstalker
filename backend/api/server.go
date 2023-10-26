@@ -2,21 +2,18 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"go-youtube-stalker-site/backend/conf"
 	"go-youtube-stalker-site/backend/youtube"
 	"log"
 	"net/http"
 	"os"
-	"sync"
 
-	_ "github.com/mattn/go-sqlite3"
+	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 type Server struct {
 	http.Server
-	wlock sync.Mutex
-	db *sql.DB
+	db *sqlitex.Pool
 	ytr *youtube.YouTubeRequester
 }
 
@@ -26,7 +23,7 @@ func NewServer() *Server {
 	config := conf.ParseConfig("conf.json")
 
 	// init db
-	db, err := sql.Open("sqlite3", config.DbName)
+	db, err := sqlitex.Open(config.DSN, 0, 100)
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}
@@ -34,31 +31,31 @@ func NewServer() *Server {
 	if err != nil {
 		log.Fatal("cannot open db.sql: ", err.Error())
 	}
-	_, err = db.Exec(string(dbScheme))
-	if err != nil {
-		db.Close()
+	conn := db.Get(context.Background())
+	if err := sqlitex.Execute(conn, string(dbScheme), nil); err != nil {
 		log.Fatal("cannot create db: ", err)
 	}
+	db.Put(conn)
+	
 	log.Println("database ready")
 
 	// init youtube requester
 	ytr := youtube.NewYouTubeRequester(config)
 
+	// init server
+	mux := http.NewServeMux()
 	server := &Server{
+		Server: http.Server{
+			Addr: config.Addr,
+			Handler: mux,
+		},
 		db: db,
 		ytr: ytr,
 	}
 
-	// Create a new router
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/random", server.Random)
+	mux.HandleFunc("/api/random", server.RandomHandler)
 	mux.Handle("/static/", LogRequestedUrl(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static")))))
-	mux.HandleFunc("/", server.ServePages)
-
-	server.Server = http.Server{
-		Addr: config.Addr,
-		Handler: mux,
-	}
+	mux.HandleFunc("/", server.PagesHandler)
 
 	return server
 }

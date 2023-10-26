@@ -1,19 +1,19 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"go-youtube-stalker-site/backend/youtube"
 	"log"
 	"net/http"
-	"strings"
 	"time"
+
+	"zombiezen.com/go/sqlite"
+	"zombiezen.com/go/sqlite/sqlitex"
 )
 
-var ErrorInvalidQueryParam = errors.New("invalid query param")
-
-func (s *Server) Random(w http.ResponseWriter, r *http.Request) {
+func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 
@@ -84,9 +84,12 @@ func (s *Server) Random(w http.ResponseWriter, r *http.Request) {
 		video.Vertical = short
 	}
 
-	err = s.StoreVideos(results)
-	if err != nil {
-		log.Println("couldn't store found videos:", err.Error())
+	errs := s.StoreVideos(results)
+	if len(errs) != 0 {
+		log.Println("[couldn't store found videos]")
+		for _, err := range errs {
+			log.Println(" - ", err.Error())
+		}
 	}
 
 	for _, video := range results {
@@ -101,7 +104,8 @@ func (s *Server) Random(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) TakeFirstUnseen(sc *SearchCriteria) (*Video, error) {
 
-	stmt := fmt.Sprintf(`
+	query := fmt.Sprintf(
+		`
 		SELECT id, uploaded, title, views, vertical, category
 		FROM videos
 		WHERE %s
@@ -110,29 +114,54 @@ func (s *Server) TakeFirstUnseen(sc *SearchCriteria) (*Video, error) {
 			FROM videos_visitors
 			WHERE videos_visitors.visitor_id = %s
 		)
-	`, sc.MakeWhere(), sc.Visitor)
+		LIMIT 1
+		`,
+		sc.MakeWhere(),
+		sc.Visitor,
+	)
+
+	conn := s.db.Get(context.Background())
+	defer s.db.Put(conn)
 
 	video := &Video{}
-	err := s.db.QueryRow(stmt).Scan(video.Id, video.Uploaded, video.Title, video.Views, video.Vertical, video.Category)
-	return video, err
+	// video.Id, video.Uploaded, video.Title, video.Views, video.Vertical, video.Category
 
+	err := sqlitex.Execute(conn, query, &sqlitex.ExecOptions{
+		ResultFunc: func(stmt *sqlite.Stmt) error {
+			video.Id = stmt.GetText("id")
+			video.Uploaded = stmt.GetInt64("uploaded")
+			video.Title = stmt.GetText("title")
+			video.Views = int(stmt.GetInt64("views"))
+			video.Vertical = stmt.GetBool("vertical")
+			video.Category = int(stmt.GetInt64("category"))
+			return nil
+		},
+	})
+
+	return video, err
 }
 
-func (s *Server) StoreVideos(videos map[string]*Video) error {
-	stmtParts := []string{"INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES"}
+func (s *Server) StoreVideos(videos map[string]*Video) []error {
+
+	const query = "INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES (?, ?, ?, ?, ?, ?);"
+	
+	conn := s.db.Get(context.Background())
+	defer s.db.Put(conn)
+
+	var errs []error
 	for _, video := range videos {
-		stmtParts = append(stmtParts, fmt.Sprintf("(%s, %d, %s, %d, %t, %d)", video.Id, video.Uploaded, video.Title, video.Views, video.Vertical, video.Category))
+		options := &sqlitex.ExecOptions{Args: []any{video.Id, video.Uploaded, video.Title, video.Views, video.Vertical, video.Category}}
+		err := sqlitex.Execute(conn, query, options)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s %w", video.Id, err))
+		}
 	}
-	stmt := strings.Join(stmtParts, ", ") + ";"
-	s.wlock.Lock()
-	_, err := s.db.Exec(stmt)
-	s.wlock.Unlock()
-	return err
+	return errs
 }
 
 func (s *Server) RememberSeen(visitorId string, videoId string) error {
 
-	const stmt = `
+	const query = `
 		INSERT INTO videos_visitors (visitor_id, video_id)
 		VALUES (
 			(
@@ -145,9 +174,15 @@ func (s *Server) RememberSeen(visitorId string, videoId string) error {
 			?
 		);
 	`
+	conn := s.db.Get(context.Background())
+	defer s.db.Put(conn)
+
 	now := time.Now().Unix()
-	s.wlock.Lock()
-	_, err := s.db.Exec(stmt, visitorId, now, now, videoId)
-	s.wlock.Unlock()
+	err := sqlitex.Execute(
+		conn,
+		query,
+		&sqlitex.ExecOptions{Args: []any{visitorId, now, now, videoId}},
+	)
+
 	return err
 }

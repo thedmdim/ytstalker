@@ -9,7 +9,7 @@ import (
 // Parse and execute the templates
 var templates = template.Must(template.ParseGlob("frontend/*/*.html"))
 
-func (s *Server) ServePages(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PagesHandler(w http.ResponseWriter, r *http.Request) {
 	// Check the request URL
 	if r.URL.Path == "/" {
 		// Execute the index template

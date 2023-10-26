@@ -25,13 +25,12 @@ func main() {
 
 	<- stop
 	
-	
 	log.Println("shutting down the server...")
 	defer cancel()
 
 	err := server.Shutdown(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("couldn't shut down:", err.Error())
 	}
 	log.Println("success! thanks for not killing :)")
 }

@@ -10,7 +10,7 @@ type Config struct {
 	Addr string `json:"addr"`
 	YouTubeApiUrl string `json:"youtube_api_url"`
 	YouTubeApiKeys []string `json:"youtube_api_keys"`
-	DbName string `json:"db_name"`
+	DSN string `json:"dsn"`
 }
 
 func ParseConfig(path string) *Config {
@@ -35,8 +35,8 @@ func ParseConfig(path string) *Config {
 		log.Fatal("You forgot to provide YouTube API keys!")
 	}
 
-	if config.DbName == "" {
-		config.DbName = "server.db"
+	if config.DSN == "" {
+		config.DSN = "server.db"
 	}
 
 	return config

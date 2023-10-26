@@ -4,5 +4,5 @@
     "youtube_api_keys": [
         "AIzaSyAWJfmC4-ZSNK4vQe3UZfN_sdIMA9B7tBQ"
     ],
-    "db_name": "server.db"
+    "dsn": "file:server.db"
 }
