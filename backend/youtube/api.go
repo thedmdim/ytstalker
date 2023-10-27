@@ -54,10 +54,13 @@ func (y *YouTubeRequester) Search(query string) *SearchResponse {
 
 func (y *YouTubeRequester) VideosInfo(ids []string) *VideosResponse {
 
+
+
 	req, _ := http.NewRequest("GET", y.conf.YouTubeApiUrl + "/videos", nil)
-	q := url.Values{}
-    q.Add("part", "statistics,snippet")
-	q.Add("id", strings.Join(ids, ","))
+	// q := url.Values{}
+    // q.Add("part", "statistics,snippet")
+	// q.Add("id", strings.Join(ids, ","))
+	req.URL.RawQuery += fmt.Sprintf("id=%s&part=statistics,snippet", strings.Join(ids, ","))
 
 	res, err := y.Request(req)
 	if err != nil {

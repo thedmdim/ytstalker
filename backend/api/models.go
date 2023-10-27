@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -33,6 +34,8 @@ func ParseQueryParams(params url.Values) *SearchCriteria {
 
 	sc := &SearchCriteria{}
 
+	sc.Visitor = params.Get("visitor")
+
 	viewsValues := strings.Split(params.Get("views"), "-")
 	if len(viewsValues) == 2 {
 		sc.ViewsFrom = viewsValues[0]
@@ -40,28 +43,29 @@ func ParseQueryParams(params url.Values) *SearchCriteria {
 	}
 
 	yearsValues := strings.Split(params.Get("years"), "-")
-	if len(viewsValues) != 2 {
+	if len(viewsValues) == 2 {
 		sc.YearsFrom = yearsValues[0]
 		sc.YearsTo = yearsValues[1]
 	}
 
 	category := params.Get("category")
-	_, err := strconv.ParseBool(params.Get("category"))
+	_, err := strconv.ParseBool(category)
 	if err == nil {
 		sc.Category = category
 	}
 
-	 
+	log.Println(4)
 	horizonly, err := strconv.ParseBool(params.Get("horizonly"))
 	if err == nil {
 		sc.Horizonly = horizonly
 	}
+	log.Println(5)
 
 	return sc
 }
 
 func (sc *SearchCriteria) MakeWhere() string {
-	var conditions []string
+	var conditions = []string{"AND"}
 
 	if _, err := strconv.Atoi(sc.ViewsFrom); err == nil {
 		conditions = append(conditions, "views >= " + sc.ViewsFrom + " AND")

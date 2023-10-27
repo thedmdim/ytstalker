@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"go-youtube-stalker-site/backend/conf"
 	"go-youtube-stalker-site/backend/youtube"
 	"log"
@@ -32,7 +33,7 @@ func NewServer() *Server {
 		log.Fatal("cannot open db.sql: ", err.Error())
 	}
 	conn := db.Get(context.Background())
-	if err := sqlitex.Execute(conn, string(dbScheme), nil); err != nil {
+	if err := sqlitex.ExecuteScript(conn, string(dbScheme), nil); err != nil {
 		log.Fatal("cannot create db: ", err)
 	}
 	db.Put(conn)
@@ -44,6 +45,7 @@ func NewServer() *Server {
 
 	// init server
 	mux := http.NewServeMux()
+	
 	server := &Server{
 		Server: http.Server{
 			Addr: config.Addr,
@@ -55,6 +57,7 @@ func NewServer() *Server {
 
 	mux.HandleFunc("/api/random", server.RandomHandler)
 	mux.Handle("/static/", LogRequestedUrl(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static")))))
+	//mux.HandleFunc("/o", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {log.Println("new request:", r.URL.Path)}))
 	mux.HandleFunc("/", server.PagesHandler)
 
 	return server
@@ -67,7 +70,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	}
 	err = s.db.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("error closing db conn pool: %w", err)
 	}
 	return nil
 }
