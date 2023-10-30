@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -54,12 +53,10 @@ func ParseQueryParams(params url.Values) *SearchCriteria {
 		sc.Category = category
 	}
 
-	log.Println(4)
 	horizonly, err := strconv.ParseBool(params.Get("horizonly"))
 	if err == nil {
 		sc.Horizonly = horizonly
 	}
-	log.Println(5)
 
 	return sc
 }

@@ -57,7 +57,6 @@ func NewServer() *Server {
 
 	mux.HandleFunc("/api/random", server.RandomHandler)
 	mux.Handle("/static/", LogRequestedUrl(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static")))))
-	//mux.HandleFunc("/o", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {log.Println("new request:", r.URL.Path)}))
 	mux.HandleFunc("/", server.PagesHandler)
 
 	return server

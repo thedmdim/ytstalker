@@ -10,12 +10,13 @@ import (
 )
 
 var ErrorApiQuota error = errors.New("YouTube API quota exceeded")
+var ErrorMaxTries error = errors.New("you've reached max api tries limit")
 
 func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 	// Just wrap http.Get to add http code errors
 	// retries with fresh api keys if provided
 
-	for {
+	for counter := 0; counter < y.conf.YouTubeApiMaxTries; counter++ {
 		q := req.URL.Query()
 		q.Add("key", y.conf.YouTubeApiKeys[y.currentApiKeyN])
 		req.URL.RawQuery = q.Encode()
@@ -35,7 +36,8 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 			return nil, fmt.Errorf("%d %s", res.StatusCode, req.URL.String())
 		}
 		return res, err
-	}	
+	}
+	return nil, ErrorMaxTries
 }
 
 

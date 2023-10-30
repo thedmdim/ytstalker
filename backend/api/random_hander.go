@@ -6,6 +6,7 @@ import (
 	"go-youtube-stalker-site/backend/youtube"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"zombiezen.com/go/sqlite"
@@ -33,7 +34,10 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 
 	if video != nil {
 		encoder.Encode(video)
-		s.RememberSeen(conn, params.Get("visitor"), video.Id)
+		err := s.RememberSeen(conn, params.Get("visitor"), video.Id)
+		if err != nil {
+			log.Println("error remembering seen: ", err.Error())
+		}
 		return
 	}
 	log.Println("video in db not found, ask youtube api")
@@ -76,9 +80,10 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, item := range videoInfoResult.Items {
+		
 		video := results[item.Id]
-		video.Category = item.Snippet.CategoryId
-		video.Views = item.Statistics.ViewCount
+		video.Category, _ = strconv.Atoi(item.Snippet.CategoryId)
+		video.Views, _ = strconv.Atoi(item.Statistics.ViewCount)
 	}
 
 	for videoId, video := range results {
@@ -105,6 +110,7 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(e.Error())
 		}
 	}
+	return
 }
 
 func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria) (*Video, error) {
@@ -149,7 +155,7 @@ func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria) (*Video,
 }
 
 func (s *Server) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []error {
-
+	log.Println("store found videos", len(videos))
 	var errs []error
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
@@ -162,12 +168,12 @@ func (s *Server) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []erro
 	stmt := conn.Prep("INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES (?, ?, ?, ?, ?, ?);")
 	for _, video := range videos {
 		
-		stmt.SetText("id", video.Id)
-		stmt.SetInt64("uploaded", video.Uploaded)
-		stmt.SetText("title", video.Title)
-		stmt.SetInt64("views", int64(video.Views))
-		stmt.SetBool("vertical", video.Vertical)
-		stmt.SetInt64("category", int64(video.Views))
+		stmt.BindText(1, video.Id)
+		stmt.BindInt64(2, video.Uploaded)
+		stmt.BindText(3, video.Title)
+		stmt.BindInt64(4, int64(video.Views))
+		stmt.BindBool(5, video.Vertical)
+		stmt.BindInt64(6, int64(video.Category))
 
 		if _, e := stmt.Step(); e != nil {
 			errs = append(errs, fmt.Errorf("%s %w", video.Id, e))

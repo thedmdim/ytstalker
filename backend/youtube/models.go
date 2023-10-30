@@ -32,16 +32,16 @@ type VideosResponse struct {
 type VideosItem struct {
 	Id string `json:"id"`
 	Statistics VideosStatistics `json:"statistics"`
-	Snippet VideosSnippet `json:"status"`
+	Snippet VideosSnippet `json:"snippet"`
 	
 }
 
 type VideosStatistics struct {
-	ViewCount int `json:"viewCount"`
+	ViewCount string `json:"viewCount"`
 }
 
 type VideosSnippet struct {
-	CategoryId int `json:"categoryId"`
+	CategoryId string `json:"categoryId"`
 }
 
 // settings

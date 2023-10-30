@@ -1,8 +1,0 @@
-{
-    "addr": ":808",
-    "youtube_api_url": "https://www.googleapis.com/youtube/v3",
-    "youtube_api_keys": [
-        "AIzaSyAWJfmC4-ZSNK4vQe3UZfN_sdIMA9B7tBQ"
-    ],
-    "dsn": "file:server.db"
-}
