@@ -14,8 +14,15 @@ import (
 )
 
 func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
+
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		encoder.Encode(Message{"only get allowed"})
+		return
+	}
 
 	params := r.URL.Query()
 	if params.Get("visitor") == "" {
@@ -194,18 +201,15 @@ func (s *Server) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 	}
 	defer endFn(&err)
 
-	now := time.Now().Unix()
 	stmt, err := conn.Prepare(`
 		INSERT INTO visitors (id, last_seen)
-		VALUES(?, ?)
+		VALUES(?, unixepoch())
 		ON CONFLICT (id)
-		DO UPDATE SET last_seen=?;`)
+		DO UPDATE SET last_seen=unixepoch();`)
 	if err != nil {
 		return fmt.Errorf("error preparing query: %w", err)
 	}
 	stmt.BindText(1, visitorId)
-	stmt.BindInt64(2, now)
-	stmt.BindInt64(3, now)
 	if _, err = stmt.Step(); err != nil {
 		return err
 	}

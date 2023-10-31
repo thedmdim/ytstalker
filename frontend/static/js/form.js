@@ -1,9 +1,9 @@
-let viewsSliderContainer = document.getElementById("viewsSlider");
+let viewsSliderContainer = document.getElementById("views-slider");
 let views = [0, 10, 50, 150, 500, 1000, 5000, 15000, "∞"]
 
-
-let yearsSliderContainer = document.getElementById("yearsSlider");
-let years = [2006, 2010, 2014, 2016, 2019, new Date().getFullYear()]
+let yearsSliderContainer = document.getElementById("years-slider");
+let currentYear = new Date().getFullYear()
+let years = [2006, 2010, 2014, 2016, 2019, currentYear]
 
 let mainButton = document.getElementById("random")
 let mainButtonGradient = ["d367c1", "ffc93f", "5f61de", "696be4", "e46fe8", "c8a4e7"]
@@ -67,7 +67,7 @@ let yearsSlider = noUiSlider.create(yearsSliderContainer, {
     // tooltips: [true, true],
     range: {
         min: 0,
-        max: views.length - 1
+        max: years.length - 1
     },
     pips: {
         mode: 'count',

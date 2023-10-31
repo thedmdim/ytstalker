@@ -15,7 +15,7 @@ func (s *Server) PagesHandler(w http.ResponseWriter, r *http.Request) {
 	// Check the request URL
 	if r.URL.Path == "/" {
 		// Execute the index template
-		err := templates.ExecuteTemplate(w, "index.html", nil)
+		err := templates.ExecuteTemplate(w, "random.html", nil)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
