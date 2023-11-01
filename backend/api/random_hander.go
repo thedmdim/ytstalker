@@ -18,32 +18,32 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 
-	if r.Method != "GET" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		encoder.Encode(Message{"only get allowed"})
-		return
-	}
-
+	visitor := r.Header.Get("visitor")
 	params := r.URL.Query()
-	if params.Get("visitor") == "" {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		encoder.Encode(Message{"visitor param required"})
-		return
-	}
 
 	conn := s.db.Get(r.Context())
 	defer s.db.Put(conn)
 
-	video, err := s.TakeFirstUnseen(conn, ParseQueryParams(params))
+	video, err := s.TakeFirstUnseen(conn, ParseQueryParams(params), visitor)
 	if err != nil {
 		log.Println("take first unseen failed:", err.Error())
 	}
 
+	response := &RandomResponse{}
+
 	if video != nil {
-		encoder.Encode(video)
-		err := s.RememberSeen(conn, params.Get("visitor"), video.Id)
+		reactions, err := GetReactionStats(conn, video.ID)
 		if err != nil {
-			log.Println("error remembering seen: ", err.Error())
+			log.Println("couldn't save reaction:", err.Error())
+		}
+
+		response.Video = video
+		response.Reactions = reactions
+
+		encoder.Encode(response)
+		err = s.RememberSeen(conn, visitor, video.ID)
+		if err != nil {
+			log.Println("error remembering seen:", err.Error())
 		}
 		return
 	}
@@ -64,11 +64,11 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 
 		for _, item := range searchResult.Items {
 			video := Video{}
-			video.Id = item.Id.VideoId
+			video.ID = item.Id.VideoId
 			video.Title = item.Snippet.Title
 			parsed, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 			if err == nil {
-				video.Uploaded = parsed.Unix()
+				video.UploadedAt = parsed.Unix()
 			}
 			results[item.Id.VideoId] = &video
 		}
@@ -77,9 +77,9 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 
 	ids := make([]string, len(results))
 	for _, video := range results {
-		ids = append(ids, video.Id)
+		ids = append(ids, video.ID)
 	}
-	
+
 	videoInfoResult := s.ytr.VideosInfo(ids)
 	if videoInfoResult == nil {
 		w.WriteHeader(http.StatusBadGateway)
@@ -87,10 +87,9 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, item := range videoInfoResult.Items {
-		
 		video := results[item.Id]
-		video.Category, _ = strconv.Atoi(item.Snippet.CategoryId)
-		video.Views, _ = strconv.Atoi(item.Statistics.ViewCount)
+		video.Category, _ = strconv.ParseInt(item.Snippet.CategoryId, 10, 64)
+		video.Views, _ = strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
 	}
 
 	for videoId, video := range results {
@@ -102,9 +101,10 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, video := range results {
-		err = s.RememberSeen(conn, params.Get("visitor"), video.Id)
+		err = s.RememberSeen(conn, visitor, video.ID)
 		if err == nil {
-			encoder.Encode(video)
+			response.Video = video
+			encoder.Encode(response)
 			break
 		}
 		log.Println(err.Error())
@@ -117,13 +117,13 @@ func (s *Server) RandomHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(e.Error())
 		}
 	}
-	return
 }
 
-func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria) (*Video, error) {
+func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor string) (*Video, error) {
 
-	query := fmt.Sprintf(
-		`
+	video := &Video{}
+
+	var query = fmt.Sprintf(`
 		SELECT id, uploaded, title, views, vertical, category
 		FROM videos
 		WHERE id NOT IN (
@@ -131,19 +131,19 @@ func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria) (*Video,
 			FROM videos_visitors
 			WHERE videos_visitors.visitor_id = %s
 		) %s
-		LIMIT 1
-		`,
-		sc.Visitor,
+		LIMIT 1`,
+		visitor,
 		sc.MakeWhere(),
 	)
 
-	video := &Video{}
+	log.Println(query)
 
 	stmt, _, err := conn.PrepareTransient(query)
 	if err != nil {
 		return nil, fmt.Errorf("error preparing query: %w", err)
 	}
 	rows, err := stmt.Step()
+	log.Println(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -151,12 +151,17 @@ func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria) (*Video,
 		return nil, nil
 	}
 
-	video.Id = stmt.GetText("id")
-	video.Uploaded = stmt.GetInt64("uploaded")
+	video.ID = stmt.GetText("id")
+	video.UploadedAt = stmt.GetInt64("uploaded")
 	video.Title = stmt.GetText("title")
-	video.Views = int(stmt.GetInt64("views"))
+	video.Views = stmt.GetInt64("views")
 	video.Vertical = stmt.GetBool("vertical")
-	video.Category = int(stmt.GetInt64("category"))
+	video.Category = stmt.GetInt64("category")
+
+	err = stmt.Reset()
+	if err != nil {
+		return video, err
+	}
 
 	return video, nil
 }
@@ -174,16 +179,16 @@ func (s *Server) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []erro
 
 	stmt := conn.Prep("INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES (?, ?, ?, ?, ?, ?);")
 	for _, video := range videos {
-		
-		stmt.BindText(1, video.Id)
-		stmt.BindInt64(2, video.Uploaded)
+
+		stmt.BindText(1, video.ID)
+		stmt.BindInt64(2, video.UploadedAt)
 		stmt.BindText(3, video.Title)
 		stmt.BindInt64(4, int64(video.Views))
 		stmt.BindBool(5, video.Vertical)
 		stmt.BindInt64(6, int64(video.Category))
 
 		if _, e := stmt.Step(); e != nil {
-			errs = append(errs, fmt.Errorf("%s %w", video.Id, e))
+			errs = append(errs, fmt.Errorf("%s %w", video.ID, e))
 		}
 		if err := stmt.Reset(); err != nil {
 			errs = append(errs, fmt.Errorf("error resetting stmt: %w", err))
@@ -201,14 +206,12 @@ func (s *Server) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 	}
 	defer endFn(&err)
 
-	stmt, err := conn.Prepare(`
+	stmt := conn.Prep(`
 		INSERT INTO visitors (id, last_seen)
 		VALUES(?, unixepoch())
 		ON CONFLICT (id)
-		DO UPDATE SET last_seen=unixepoch();`)
-	if err != nil {
-		return fmt.Errorf("error preparing query: %w", err)
-	}
+		DO UPDATE SET last_seen=unixepoch()
+	`)
 	stmt.BindText(1, visitorId)
 	if _, err = stmt.Step(); err != nil {
 		return err
@@ -221,6 +224,10 @@ func (s *Server) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 	stmt.BindText(1, visitorId)
 	stmt.BindText(2, videoId)
 	if _, err = stmt.Step(); err != nil {
+		return err
+	}
+	err = stmt.Reset()
+	if err != nil {
 		return err
 	}
 

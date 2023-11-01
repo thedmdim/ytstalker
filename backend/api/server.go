@@ -10,7 +10,11 @@ import (
 	"os"
 
 	"zombiezen.com/go/sqlite/sqlitex"
+	"github.com/gorilla/mux"
+	"html/template"
 )
+
+var templates = template.Must(template.ParseGlob("frontend/*/*.html"))
 
 type Server struct {
 	http.Server
@@ -44,21 +48,28 @@ func NewServer() *Server {
 	ytr := youtube.NewYouTubeRequester(config)
 
 	// init server
-	mux := http.NewServeMux()
+	r := mux.NewRouter()
 	
 	server := &Server{
 		Server: http.Server{
 			Addr: config.Addr,
-			Handler: mux,
+			Handler: r,
 		},
 		db: db,
 		ytr: ytr,
 	}
 
-	mux.HandleFunc("/api/random", server.RandomHandler)
-	mux.HandleFunc("/api/reaction", server.ReactionsHandler)
-	mux.Handle("/static/", LogRequestedUrl(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static")))))
-	mux.HandleFunc("/", server.PagesHandler)
+	r.PathPrefix("/api/videos/{video_id}/{reaction:(?:cool|trash)})").Methods("POST").HandlerFunc(server.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
+	r.PathPrefix("/api/videos/random").Methods("GET").HandlerFunc(server.RandomHandler).HeadersRegexp("visitor", "[0-9]{10,20}")
+
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static"))))
+	r.PathPrefix("/").Methods("GET").HandlerFunc(
+		func (w http.ResponseWriter, r *http.Request) {
+			err := templates.ExecuteTemplate(w, "random.html", nil)
+			if err != nil {
+				log.Println(err.Error())
+			}
+		})
 
 	return server
 }

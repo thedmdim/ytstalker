@@ -1,39 +1,55 @@
 package api
 
 import (
+	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Message struct {
 	Detail string `json:"detail"`
 }
 
+type RandomResponse struct {
+	Video     *Video     `json:"video,omitempty"`
+	Reactions Reactions `json:"reactions"`
+}
+
 type Video struct {
-	Id string `json:"id"`
-	Uploaded int64 `json:"uploaded"`
-	Title string `json:"title"`
-	Views int `json:"views"`
-	Vertical bool `json:"vertical"`
-	Category int `json:"category"`
+	ID         string `json:"id"`
+	UploadedAt int64  `json:"uploaded"`
+	Title      string `json:"title"`
+	Views      int64  `json:"views"`
+	Vertical   bool   `json:"vertical"`
+	Category   int64  `json:"category"`
+}
+
+func (v *Video) GetFormattedUploadDate(timestamp int64) string {
+	t := time.Unix(v.UploadedAt, 0)
+	return t.Format("02.01.06")
+}
+
+type Reactions struct {
+	Cools   int64 `json:"cools"`
+	Trashes int64 `json:"trashes"`
 }
 
 type SearchCriteria struct {
-	Visitor string
 	ViewsFrom string
 	ViewsTo string
 	YearsFrom string
 	YearsTo string
 	Category string
 	Horizonly bool
+	Musiconly bool
 }
 
 func ParseQueryParams(params url.Values) *SearchCriteria {
 
 	sc := &SearchCriteria{}
-
-	sc.Visitor = params.Get("visitor")
 
 	viewsValues := strings.Split(params.Get("views"), "-")
 	if len(viewsValues) == 2 {
@@ -65,19 +81,24 @@ func (sc *SearchCriteria) MakeWhere() string {
 	var conditions = []string{"AND"}
 
 	if _, err := strconv.Atoi(sc.ViewsFrom); err == nil {
-		conditions = append(conditions, "views >= " + sc.ViewsFrom + " AND")
+		conditions = append(conditions, "views >= "+sc.ViewsFrom+" AND")
 	}
 	if _, err := strconv.Atoi(sc.ViewsTo); err == nil {
-		conditions = append(conditions, "views <= " + sc.ViewsTo + " AND")
+		conditions = append(conditions, "views <= "+sc.ViewsTo+" AND")
 	}
-	if _, err := strconv.Atoi(sc.YearsFrom); err == nil {
-		conditions = append(conditions, "uploaded >= " + sc.YearsFrom + " AND")
+	if year, err := strconv.Atoi(sc.YearsFrom); err == nil {
+		timestamp := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()
+		conditions = append(conditions, fmt.Sprintf("uploaded >= %d AND", timestamp))
 	}
-	if _, err := strconv.Atoi(sc.YearsFrom); err == nil {
-		conditions = append(conditions, "uploaded <= " + sc.YearsTo + " AND")
+	if year, err := strconv.Atoi(sc.YearsTo); err == nil {
+		timestamp := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()
+		conditions = append(conditions, fmt.Sprintf("uploaded <= %d AND", timestamp))
 	}
 	if sc.Horizonly {
 		conditions = append(conditions, "vertical = 0")
+	}
+	if sc.Musiconly {
+		conditions = append(conditions, "category = 22")
 	}
 	if len(conditions) > 1 {
 		return strings.Join(conditions, " ")

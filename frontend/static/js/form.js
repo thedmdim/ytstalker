@@ -82,30 +82,57 @@ yearsSlider.on('update', shiftColors);
 
 // [lastRight, lastLeft] = viewsSlider.getPositions()
 
-function ShowVideo(video) {
-    let date = new Date(video.uploaded)
-    document.getElementById("video").src = `https://www.youtube.com/embed/${video.id}`
-    document.getElementById("video-info").textContent = `${video.views} views | Uploaded ${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`
-    localStorage.setItem('lastSeen', video.id)
+function ShowVideo(data) {
+
+    document.getElementById("video").src = `https://www.youtube.com/embed/${data.video.id}`
+
+    const date = new Date(data.video.uploaded * 1000)
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = date.getFullYear();
+    document.getElementById("video-info").textContent = `${day}.${month}.${year} | ${data.video.views} views`
+    
+    let cool = document.getElementById("cool");
+    let trash = document.getElementById("trash");
+    
+    cool.innerText = [cool.innerText.split(" ")[0], data.reactions.cools].join(" ")
+    trash.innerText = [trash.innerText.split(" ")[0], data.reactions.trashes].join(" ")
+
+    localStorage.setItem('lastSeen', data.video.id)
 }
 
-if (!localStorage.getItem('lastSeen')) {
-    fetch("/api/random?" + `visitor=${sessionStorage.getItem('visitor')}`)
+if (localStorage.getItem('lastSeen')) {
+    document.getElementById("video").src += localStorage.getItem('lastSeen')
+} else {
+    fetch(
+        `/api/videos/random`,
+        {
+            headers: {"visitor": localStorage.getItem('visitor')}
+        }
+    )
     .then(response => response.json())
     .then(data => ShowVideo(data))
 }
 
-document.getElementById("random").onclick = async function() {
+document.getElementById("random").onclick = function() {
     let mainButtonMessageDelay = 800
     this.style.filter = "grayscale(100%)";
     this.disabled = true;
 
     let viewsRange = viewsSlider.get()
-    let vertical = !document.querySelector("#vertical input").checked
+    let yearsRange = yearsSlider.get()
+    let horizonly = !document.getElementById("horizonly").checked
+    let musiconly = !document.getElementById("musiconly").checked
     let beforeText = document.getElementById("random").innerText
 
-    fetch("/api/random?" + `visitor=${localStorage.getItem('visitor')}&from=${viewsRange[0]}&to=${viewsRange[1]}&vertical=${vertical}`)
+    fetch(
+        "/api/videos/random?" + `views=${viewsRange[0]}-${viewsRange[1]}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}&musiconly=${musiconly}`,
+        {
+            headers: {"visitor": localStorage.getItem('visitor')}
+        }
+    )
     .then(response => {
+        console.log("response status", response.status)
         if (response.ok) {
             return response.json();
         } else {
@@ -119,6 +146,7 @@ document.getElementById("random").onclick = async function() {
         mainButton.innerText = "cannot fetch api"
     })
     .finally(() => {
+        console.log("finally!")
         setTimeout(() => {
                 this.style.filter = "";
                 this.disabled = false;

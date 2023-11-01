@@ -7,6 +7,8 @@ require (
 	modernc.org/sqlite v1.26.0
 )
 
+require github.com/gorilla/mux v1.8.0 // indirect
+
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
