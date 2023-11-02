@@ -77,21 +77,21 @@ func ParseQueryParams(params url.Values) *SearchCriteria {
 }
 
 func (sc *SearchCriteria) MakeWhere() string {
-	var conditions = []string{"AND"}
+	var conditions []string
 
 	if _, err := strconv.Atoi(sc.ViewsFrom); err == nil {
-		conditions = append(conditions, "views >= "+sc.ViewsFrom+" AND")
+		conditions = append(conditions, "views >= "+sc.ViewsFrom)
 	}
 	if _, err := strconv.Atoi(sc.ViewsTo); err == nil {
-		conditions = append(conditions, "views <= "+sc.ViewsTo+" AND")
+		conditions = append(conditions, "views <= "+sc.ViewsTo)
 	}
 	if year, err := strconv.Atoi(sc.YearsFrom); err == nil {
 		timestamp := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()
-		conditions = append(conditions, fmt.Sprintf("uploaded >= %d AND", timestamp))
+		conditions = append(conditions, fmt.Sprintf("uploaded >= %d", timestamp))
 	}
 	if year, err := strconv.Atoi(sc.YearsTo); err == nil {
 		timestamp := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()
-		conditions = append(conditions, fmt.Sprintf("uploaded <= %d AND", timestamp))
+		conditions = append(conditions, fmt.Sprintf("uploaded <= %d", timestamp))
 	}
 	if sc.Horizonly {
 		conditions = append(conditions, "vertical = 0")
@@ -99,8 +99,38 @@ func (sc *SearchCriteria) MakeWhere() string {
 	if sc.Musiconly {
 		conditions = append(conditions, "category = 22")
 	}
-	if len(conditions) > 1 {
-		return strings.Join(conditions, " ")
+	if len(conditions) > 0 {
+		return "AND " + strings.Join(conditions, " AND ")
 	}
 	return ""
+}
+
+func (sc *SearchCriteria) CheckVideo(video *Video) bool {
+	if viewsFrom, err := strconv.ParseInt(sc.ViewsFrom, 10, 64); err == nil && video.Views < viewsFrom {
+		return false
+	}
+	if viewsTo, err := strconv.ParseInt(sc.ViewsTo, 10, 64); err == nil && video.Views > viewsTo {
+		return false
+	}
+	if yearFrom, err := strconv.Atoi(sc.YearsFrom); err == nil {
+		if video.UploadedAt < time.Date(yearFrom, time.January, 1, 0, 0, 0, 0, time.UTC).Unix() {
+			return false
+		}
+	}
+	if yearTo, err := strconv.Atoi(sc.YearsTo); err == nil {
+		if video.UploadedAt > time.Date(yearTo, time.January, 1, 0, 0, 0, 0, time.UTC).Unix() {
+			return false
+		}
+	}
+	if sc.Horizonly {
+		if video.Vertical {
+			return false
+		}
+	}
+	if sc.Musiconly {
+		if video.Category != 22 {
+			return false
+		}
+	}
+	return true
 }

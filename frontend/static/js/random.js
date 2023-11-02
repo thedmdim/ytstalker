@@ -123,8 +123,8 @@ document.getElementById("random").onclick = function() {
 
     let viewsRange = viewsSlider.get()
     let yearsRange = yearsSlider.get()
-    let horizonly = !document.getElementById("horizonly").checked
-    let musiconly = !document.getElementById("musiconly").checked
+    let horizonly = document.getElementById("horizonly").checked
+    let musiconly = document.getElementById("musiconly").checked
     let beforeText = document.getElementById("random").innerText
 
     fetch(

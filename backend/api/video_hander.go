@@ -72,7 +72,8 @@ func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
 	conn := s.db.Get(r.Context())
 	defer s.db.Put(conn)
 
-	video, err := s.TakeFirstUnseen(conn, ParseQueryParams(params), visitor)
+	searchCriteria := ParseQueryParams(params)
+	video, err := s.TakeFirstUnseen(conn, searchCriteria, visitor)
 	if err != nil {
 		log.Println("take first unseen failed:", err.Error())
 	}
@@ -98,71 +99,77 @@ func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
 	log.Println("video in db not found, ask youtube api")
 
 	// go ask youtube api for random video
-	results := make(map[string]*Video)
-	for {
-		searchResult := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
-		if searchResult == nil {
-			continue
-		}
-		nItems := len(searchResult.Items)
-		if nItems == 0 {
-			continue
-		}
-		log.Printf("%d videos found", nItems)
-
-		for _, item := range searchResult.Items {
-			video := Video{}
-			video.ID = item.Id.VideoId
-			video.Title = item.Snippet.Title
-			parsed, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
-			if err == nil {
-				video.UploadedAt = parsed.Unix()
+	var found bool
+	for !found {
+		results := make(map[string]*Video)
+		for {
+			searchResult := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
+			if searchResult == nil {
+				continue
 			}
-			results[item.Id.VideoId] = &video
-		}
-		break
-	}
-
-	ids := make([]string, len(results))
-	for _, video := range results {
-		ids = append(ids, video.ID)
-	}
-
-	videoInfoResult := s.ytr.VideosInfo(ids)
-	if videoInfoResult == nil {
-		w.WriteHeader(http.StatusBadGateway)
-		encoder.Encode(Message{"couldn't find video"})
-		return
-	}
-	for _, item := range videoInfoResult.Items {
-		video := results[item.Id]
-		video.Category, _ = strconv.ParseInt(item.Snippet.CategoryId, 10, 64)
-		video.Views, _ = strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
-	}
-
-	for videoId, video := range results {
-		short, err := s.ytr.IsShort(videoId)
-		if err != nil {
-			log.Println("error defining short:", err.Error())
-		}
-		video.Vertical = short
-	}
-
-	for _, video := range results {
-		err = s.RememberSeen(conn, visitor, video.ID)
-		if err == nil {
-			response.Video = video
-			encoder.Encode(response)
+			nItems := len(searchResult.Items)
+			if nItems == 0 {
+				continue
+			}
+			log.Printf("%d videos found", nItems)
+	
+			for _, item := range searchResult.Items {
+				video := Video{}
+				video.ID = item.Id.VideoId
+				video.Title = item.Snippet.Title
+				parsed, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
+				if err == nil {
+					video.UploadedAt = parsed.Unix()
+				}
+				results[item.Id.VideoId] = &video
+			}
 			break
 		}
-		log.Println(err.Error())
-	}
-
-	errs := s.StoreVideos(conn, results)
-	if len(errs) > 0 {
-		log.Println("[couldn't store found videos]")
-		for _, e := range errs {
-			log.Println(e.Error())
+	
+		ids := make([]string, len(results))
+		for _, video := range results {
+			ids = append(ids, video.ID)
+		}
+	
+		videoInfoResult := s.ytr.VideosInfo(ids)
+		if videoInfoResult == nil {
+			w.WriteHeader(http.StatusBadGateway)
+			encoder.Encode(Message{"couldn't find video"})
+			return
+		}
+		for _, item := range videoInfoResult.Items {
+			video := results[item.Id]
+			video.Category, _ = strconv.ParseInt(item.Snippet.CategoryId, 10, 64)
+			video.Views, _ = strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
+		}
+	
+		for videoId, video := range results {
+			short, err := s.ytr.IsShort(videoId)
+			if err != nil {
+				log.Println("error defining short:", err.Error())
+			}
+			video.Vertical = short
+		}
+	
+		for _, video := range results {
+			if searchCriteria.CheckVideo(video) {
+				response.Video = video
+				encoder.Encode(response)
+				found = true
+				err = s.RememberSeen(conn, visitor, video.ID)
+				if err == nil {
+					log.Println("error remembering seen:", err.Error())
+				}
+				break
+			}
+		}
+	
+		errs := s.StoreVideos(conn, results)
+		if len(errs) > 0 {
+			log.Println("[couldn't store found videos]")
+			for _, e := range errs {
+				log.Println(e.Error())
+			}
 		}
 	}
 }
