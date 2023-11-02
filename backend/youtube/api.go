@@ -3,7 +3,6 @@ package youtube
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,8 +28,7 @@ func NewYouTubeRequester(conf *conf.Config) *YouTubeRequester {
 }
 
 // "inurl:" + RandomYoutubeVideoId()
-func (y *YouTubeRequester) Search(query string) *SearchResponse {
-
+func (y *YouTubeRequester) Search(query string) (*SearchResponse, error) {
 
 	req, _ := http.NewRequest("GET", y.conf.YouTubeApiUrl + "/search", nil)
 	q := url.Values{}
@@ -42,19 +40,16 @@ func (y *YouTubeRequester) Search(query string) *SearchResponse {
 
 	res, err := y.Request(req)
 	if err != nil {
-		log.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
 	r := new(SearchResponse)
 	json.NewDecoder(res.Body).Decode(r)
 
-	return r
+	return r, nil
 }
 
-func (y *YouTubeRequester) VideosInfo(ids []string) *VideosResponse {
-
-
+func (y *YouTubeRequester) VideosInfo(ids []string) (*VideosResponse, error) {
 
 	req, _ := http.NewRequest("GET", y.conf.YouTubeApiUrl + "/videos", nil)
 	// q := url.Values{}
@@ -64,14 +59,13 @@ func (y *YouTubeRequester) VideosInfo(ids []string) *VideosResponse {
 
 	res, err := y.Request(req)
 	if err != nil {
-		log.Println(err.Error())
-		return nil
+		return nil, err
 	}
 
 	r := new(VideosResponse)
 	json.NewDecoder(res.Body).Decode(r)
 
-	return r
+	return r, nil
 }
 
 func(y *YouTubeRequester) IsShort(id string) (bool, error) {

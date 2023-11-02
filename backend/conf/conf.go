@@ -10,7 +10,6 @@ type Config struct {
 	Addr string `json:"addr"`
 	YouTubeApiUrl string `json:"youtube_api_url"`
 	YouTubeApiKeys []string `json:"youtube_api_keys"`
-	YouTubeApiMaxTries int `json:"youtube_api_max_tries"`
 	DSN string `json:"dsn"`
 }
 

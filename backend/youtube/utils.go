@@ -16,7 +16,7 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 	// Just wrap http.Get to add http code errors
 	// retries with fresh api keys if provided
 
-	for counter := 0; counter < y.conf.YouTubeApiMaxTries; counter++ {
+	for {
 		q := req.URL.Query()
 		q.Add("key", y.conf.YouTubeApiKeys[y.currentApiKeyN])
 		req.URL.RawQuery = q.Encode()

@@ -102,28 +102,31 @@ func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
 	var found bool
 	for !found {
 		results := make(map[string]*Video)
-		for {
-			searchResult := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
-			if searchResult == nil {
-				continue
+		
+		searchResult, err := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+			encoder.Encode(Message{"couldn't find video"})
+			return
+		}
+		if searchResult == nil {
+			continue
+		}
+		nItems := len(searchResult.Items)
+		if nItems == 0 {
+			continue
+		}
+		log.Printf("%d videos found", nItems)
+
+		for _, item := range searchResult.Items {
+			video := Video{}
+			video.ID = item.Id.VideoId
+			video.Title = item.Snippet.Title
+			parsed, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
+			if err == nil {
+				video.UploadedAt = parsed.Unix()
 			}
-			nItems := len(searchResult.Items)
-			if nItems == 0 {
-				continue
-			}
-			log.Printf("%d videos found", nItems)
-	
-			for _, item := range searchResult.Items {
-				video := Video{}
-				video.ID = item.Id.VideoId
-				video.Title = item.Snippet.Title
-				parsed, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
-				if err == nil {
-					video.UploadedAt = parsed.Unix()
-				}
-				results[item.Id.VideoId] = &video
-			}
-			break
+			results[item.Id.VideoId] = &video
 		}
 	
 		ids := make([]string, len(results))
@@ -131,8 +134,8 @@ func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
 			ids = append(ids, video.ID)
 		}
 	
-		videoInfoResult := s.ytr.VideosInfo(ids)
-		if videoInfoResult == nil {
+		videoInfoResult, err := s.ytr.VideosInfo(ids)
+		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 			encoder.Encode(Message{"couldn't find video"})
 			return
@@ -157,7 +160,7 @@ func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
 				encoder.Encode(response)
 				found = true
 				err = s.RememberSeen(conn, visitor, video.ID)
-				if err == nil {
+				if err != nil {
 					log.Println("error remembering seen:", err.Error())
 				}
 				break
