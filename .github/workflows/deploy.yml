@@ -25,7 +25,7 @@ jobs:
 
       - name: SSH into the server and update the code
         run: |
-          ssh $SERVER_USERNAME@$SERVER_IP 'cd /root/ytstalker && git pull'
+          ssh $SERVER_USERNAME@$SERVER_IP 'cd /root/ytstalker && git pull && export PATH=$PATH:/usr/local/go/bin && go build . && systemctl restart ytstalker.service'
         env:
           SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
