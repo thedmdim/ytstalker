@@ -1,5 +1,5 @@
 let viewsSliderContainer = document.getElementById("views-slider");
-let views = [0, 10, 50, 150, 500, "1k", "5k", "15K", "∞"]
+let views = ["0", "10", "50", "150", "500", "1k", "5k", "15K", "∞"]
 
 let yearsSliderContainer = document.getElementById("years-slider");
 let currentYear = new Date().getFullYear()
@@ -14,7 +14,7 @@ var viewsSliderFormat = {
         return views[Math.round(value)];
     },
     from: function (value) {
-        return views.indexOf(Number(value));
+        return views.indexOf(value);
     }
 };
 
@@ -42,9 +42,8 @@ function shiftColors(values, handle, unencoded, tap, positions, noUiSlider) {
 }
 
 let viewsSlider = noUiSlider.create(viewsSliderContainer, {
-    start: [50, "5k"],
+    start: ["50", "5k"],
     connect: true,
-    // tooltips: [true, true],
     range: {
         min: 0,
         max: views.length - 1
@@ -64,7 +63,6 @@ viewsSlider.on('update', shiftColors);
 let yearsSlider = noUiSlider.create(yearsSliderContainer, {
     start: [2010, 2019],
     connect: true,
-    // tooltips: [true, true],
     range: {
         min: 0,
         max: years.length - 1
