@@ -1,5 +1,5 @@
 let viewsSliderContainer = document.getElementById("views-slider");
-let views = [0, 10, 50, 150, 500, 1000, 5000, 15000, "∞"]
+let views = [0, 10, 50, 150, 500, "1k", "5k", "15K", "∞"]
 
 let yearsSliderContainer = document.getElementById("years-slider");
 let currentYear = new Date().getFullYear()
@@ -127,8 +127,20 @@ document.getElementById("random").onclick = function() {
     let musiconly = document.getElementById("musiconly").checked
     let beforeText = document.getElementById("random").innerText
 
+    let viewsFrom = viewsRange[0].toString()
+    let viewsTo = viewsRange[1].toString()
+    if (viewsFrom.includes("k")) {
+        viewsFrom = viewsFrom.split("k")[0] * 1000
+    }
+    if (viewsTo.includes("k")) {
+        viewsTo = viewsTo.split("k")[0] * 1000
+    }
+    if (viewsTo == "∞") {
+        viewsTo = null
+    }
+
     fetch(
-        "/api/videos/random?" + `views=${viewsRange[0]}-${viewsRange[1]}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}&musiconly=${musiconly}`,
+        "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}&musiconly=${musiconly}`,
         {
             headers: {"visitor": localStorage.getItem('visitor')}
         }
