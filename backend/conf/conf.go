@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	Domain string `json:"domain"`
 	Addr string `json:"addr"`
 	YouTubeApiUrl string `json:"youtube_api_url"`
 	YouTubeApiKeys []string `json:"youtube_api_keys"`

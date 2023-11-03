@@ -2,23 +2,25 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"ytstalker/backend/conf"
-	"ytstalker/backend/youtube"
 	"log"
 	"net/http"
 	"os"
+	"ytstalker/backend/conf"
+	"ytstalker/backend/youtube"
 
 	"html/template"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/acme/autocert"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 var templates = template.Must(template.ParseGlob("frontend/*/*.html"))
 
 type Server struct {
-	http.Server
+	domain string
+	addr string
+	mux http.Handler
 	db  *sqlitex.Pool
 	ytr *youtube.YouTubeRequester
 }
@@ -49,10 +51,9 @@ func NewServer(config *conf.Config) *Server {
 	r := mux.NewRouter()
 
 	server := &Server{
-		Server: http.Server{
-			Addr:    config.Addr,
-			Handler: r,
-		},
+		addr: config.Addr,
+		domain: config.Domain,
+		mux: r,
 		db:  db,
 		ytr: ytr,
 	}
@@ -75,16 +76,12 @@ func NewServer(config *conf.Config) *Server {
 	return server
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
-	err := s.Server.Shutdown(ctx)
-	if err != nil {
-		return err
-	}
-	err = s.db.Close()
-	if err != nil {
-		return fmt.Errorf("error closing db conn pool: %w", err)
-	}
-	return nil
+func (s *Server) Start() error {
+	return http.Serve(autocert.NewListener(s.domain), s.mux)
+}
+
+func (s *Server) CloseDB() error {
+	return s.db.Close()
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
