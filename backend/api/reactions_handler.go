@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,7 +14,6 @@ type ReactionStats struct {
 }
 
 func (s *Server) WriteReaction(w http.ResponseWriter, r *http.Request) {
-	log.Println("write reaction!")
 
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)

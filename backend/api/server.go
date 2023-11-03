@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
-	"go-youtube-stalker-site/backend/conf"
-	"go-youtube-stalker-site/backend/youtube"
+	"ytstalker/backend/conf"
+	"ytstalker/backend/youtube"
 	"log"
 	"net/http"
 	"os"

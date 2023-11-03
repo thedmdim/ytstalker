@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"go-youtube-stalker-site/backend/youtube"
+	"ytstalker/backend/youtube"
 	"log"
 	"net/http"
 	"strconv"
@@ -60,8 +60,6 @@ func (s *Server) GetVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
-
-	log.Println("get random")
 
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
@@ -197,7 +195,6 @@ func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 		return nil, fmt.Errorf("error preparing query: %w", err)
 	}
 	rows, err := stmt.Step()
-	log.Println(rows)
 	if err != nil {
 		return nil, err
 	}

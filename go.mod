@@ -1,4 +1,4 @@
-module go-youtube-stalker-site
+module ytstalker
 
 go 1.20
 

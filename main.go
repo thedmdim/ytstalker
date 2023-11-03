@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"time"
 
-	"go-youtube-stalker-site/backend/api"
+	"ytstalker/backend/api"
 )
 
 func main() {

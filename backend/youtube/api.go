@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"go-youtube-stalker-site/backend/conf"
+	"ytstalker/backend/conf"
 )
 
 type YouTubeRequester struct {
