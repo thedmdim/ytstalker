@@ -99,21 +99,6 @@ function ShowVideo(data) {
     localStorage.setItem('lastSeen', data.video.id)
 }
 
-if (localStorage.getItem('lastSeen')) {
-    fetch(`/api/videos/${localStorage.getItem('lastSeen')}`)
-    .then(response => response.json())
-    .then(data => ShowVideo(data))
-} else {
-    fetch(
-        `/api/videos/random`,
-        {
-            headers: {"visitor": localStorage.getItem('visitor')}
-        }
-    )
-    .then(response => response.json())
-    .then(data => ShowVideo(data))
-}
-
 document.getElementById("random").onclick = function() {
     let mainButtonMessageDelay = 800
     this.style.filter = "grayscale(100%)";
@@ -167,4 +152,19 @@ document.getElementById("random").onclick = function() {
             mainButtonMessageDelay
         )
     })    
+}
+
+if (localStorage.getItem('lastSeen')) {
+    fetch(`/api/videos/${localStorage.getItem('lastSeen')}`)
+    .then(response => response.json())
+    .then(data => ShowVideo(data))
+} else {
+    fetch(
+        `/api/videos/random`,
+        {
+            headers: {"visitor": localStorage.getItem('visitor')}
+        }
+    )
+    .then(response => response.json())
+    .then(data => ShowVideo(data))
 }
