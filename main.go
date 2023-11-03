@@ -8,14 +8,22 @@ import (
 	"time"
 
 	"ytstalker/backend/api"
+	"ytstalker/backend/conf"
 )
 
 func main() {
 
+	// read config
+	confPath := os.Getenv("CONF_PATH")
+	if confPath == "" {
+		confPath = "conf.json"
+	}
+	config := conf.ParseConfig(confPath)
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	
-	server := api.NewServer()
+	server := api.NewServer(config)
 	
 	go server.ListenAndServe()
 	log.Println("server started!")

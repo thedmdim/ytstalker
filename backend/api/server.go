@@ -23,10 +23,7 @@ type Server struct {
 	ytr *youtube.YouTubeRequester
 }
 
-func NewServer() *Server {
-
-	// read config
-	config := conf.ParseConfig("conf.json")
+func NewServer(config *conf.Config) *Server {
 
 	// init db
 	db, err := sqlitex.Open(config.DSN, 0, 100)
