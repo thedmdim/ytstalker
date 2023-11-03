@@ -13,7 +13,7 @@ services:
           - traefik.http.routers.app.entrypoints=websecure
           - traefik.http.routers.app.tls.certresolver=letsencrypt
         volumes:
-          - ./conf.json:/app/conf.json:ro
+          - .:/app
         networks:
           - app
 
