@@ -42,7 +42,7 @@ function shiftColors(values, handle, unencoded, tap, positions, noUiSlider) {
 }
 
 let viewsSlider = noUiSlider.create(viewsSliderContainer, {
-    start: [50, 5000],
+    start: [50, "5k"],
     connect: true,
     // tooltips: [true, true],
     range: {
