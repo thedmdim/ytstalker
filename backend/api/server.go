@@ -19,7 +19,6 @@ var templates = template.Must(template.ParseGlob("frontend/*/*.html"))
 
 type Server struct {
 	domain string
-	addr string
 	mux http.Handler
 	db  *sqlitex.Pool
 	ytr *youtube.YouTubeRequester
@@ -51,7 +50,6 @@ func NewServer(config *conf.Config) *Server {
 	r := mux.NewRouter()
 
 	server := &Server{
-		addr: config.Addr,
 		domain: config.Domain,
 		mux: r,
 		db:  db,
@@ -77,6 +75,15 @@ func NewServer(config *conf.Config) *Server {
 }
 
 func (s *Server) Start() error {
+	go func() {
+		err := http.ListenAndServe(":80", http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "https://" + s.domain + ":443" + r.RequestURI, http.StatusMovedPermanently)
+		}))
+		if err != nil {
+			log.Fatalf("ListenAndServe error: %v", err)
+		}
+	}()
+	// return http.ListenAndServe(s.addr, s.mux)
 	return http.Serve(autocert.NewListener(s.domain), s.mux)
 }
 

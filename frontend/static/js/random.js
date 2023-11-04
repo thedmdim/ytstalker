@@ -130,6 +130,7 @@ document.getElementById("random").onclick = function() {
     )
     .then(response => {
         console.log("response status", response.status)
+        mainButton.innerText = "searching..."
         if (response.ok) {
             return response.json();
         } else {
@@ -143,7 +144,6 @@ document.getElementById("random").onclick = function() {
         mainButton.innerText = "cannot fetch api"
     })
     .finally(() => {
-        console.log("finally!")
         setTimeout(() => {
                 this.style.filter = "";
                 this.disabled = false;
