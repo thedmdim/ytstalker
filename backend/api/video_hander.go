@@ -3,18 +3,18 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"ytstalker/backend/youtube"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+	"ytstalker/backend/youtube"
 
 	"github.com/gorilla/mux"
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
-func (s *Server) GetVideo(w http.ResponseWriter, r *http.Request) {
+func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 
@@ -59,7 +59,7 @@ func (s *Server) GetVideo(w http.ResponseWriter, r *http.Request) {
 	encoder.Encode(res)
 }
 
-func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
+func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
@@ -175,7 +175,7 @@ func (s *Server) GetRandom(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor string) (*Video, error) {
+func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor string) (*Video, error) {
 
 	video := &Video{}
 
@@ -217,7 +217,7 @@ func (s *Server) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 	return video, nil
 }
 
-func (s *Server) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []error {
+func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []error {
 	log.Println("store found videos", len(videos))
 	var errs []error
 
@@ -249,7 +249,7 @@ func (s *Server) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []erro
 	return nil
 }
 
-func (s *Server) RememberSeen(conn *sqlite.Conn, visitorId string, videoId string) error {
+func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId string) error {
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
 	if err != nil {

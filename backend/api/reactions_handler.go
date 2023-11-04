@@ -9,11 +9,11 @@ import (
 )
 
 type ReactionStats struct {
-	Cools int64 `json:"cools"`
+	Cools   int64 `json:"cools"`
 	Trashes int64 `json:"trashes"`
 }
 
-func (s *Server) WriteReaction(w http.ResponseWriter, r *http.Request) {
+func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
@@ -37,7 +37,7 @@ func (s *Server) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	var reactionBool bool
 	if reaction == "cool" {
 		reactionBool = true
-	}	
+	}
 
 	stmt.BindBool(1, reactionBool)
 	stmt.BindText(2, visitor)
@@ -68,7 +68,7 @@ func GetReactionStats(conn *sqlite.Conn, videoID string) (Reactions, error) {
 	if err != nil {
 		return r, err
 	}
-	
+
 	r.Cools = stmt.GetInt64("cools")
 	r.Trashes = stmt.GetInt64("trashes")
 
