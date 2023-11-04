@@ -97,7 +97,7 @@ func (sc *SearchCriteria) MakeWhere() string {
 		conditions = append(conditions, "vertical = 0")
 	}
 	if sc.Musiconly {
-		conditions = append(conditions, "category = 22")
+		conditions = append(conditions, "category = 10")
 	}
 	if len(conditions) > 0 {
 		return "AND " + strings.Join(conditions, " AND ")
@@ -128,7 +128,7 @@ func (sc *SearchCriteria) CheckVideo(video *Video) bool {
 		}
 	}
 	if sc.Musiconly {
-		if video.Category != 22 {
+		if video.Category != 10 {
 			return false
 		}
 	}
