@@ -187,6 +187,7 @@ func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 			FROM videos_visitors
 			WHERE videos_visitors.visitor_id = %s
 		) %s
+		ORDER BY random()
 		LIMIT 1`,
 		visitor,
 		sc.MakeWhere(),
