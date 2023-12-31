@@ -122,15 +122,11 @@ func (sc *SearchCriteria) CheckVideo(video *Video) bool {
 			return false
 		}
 	}
-	if sc.Horizonly {
-		if video.Vertical {
-			return false
-		}
+	if sc.Horizonly && video.Vertical {
+		return false
 	}
-	if sc.Musiconly {
-		if video.Category != 10 {
-			return false
-		}
+	if category, err := strconv.ParseInt(sc.Category, 10, 64); err == nil && category != video.Category {
+		return false
 	}
 	return true
 }

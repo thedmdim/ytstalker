@@ -151,6 +151,13 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 			}
 			video.Vertical = short
 		}
+
+		// clear out fucking gaming videos trash i hate it
+		for videoId, video := range results {
+			if video.Category == 20 {
+				delete(results, videoId)
+			}
+		}
 	
 		for _, video := range results {
 			if searchCriteria.CheckVideo(video) {
