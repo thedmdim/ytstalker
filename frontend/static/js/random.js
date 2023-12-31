@@ -118,6 +118,9 @@ document.getElementById("random").onclick = function() {
     if (viewsTo.includes("k")) {
         viewsTo = viewsTo.split("k")[0] * 1000
     }
+    if (viewsTo == "∞") {
+        viewsTo = 'inf'
+    }
 
     let apiUrl = "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}`
     if (musiconly) {
