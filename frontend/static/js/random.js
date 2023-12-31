@@ -121,7 +121,7 @@ document.getElementById("random").onclick = function() {
 
     let apiUrl = "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}`
     if (musiconly) {
-        url += "&category=10"
+        apiUrl += "&category=10"
     }
 
     fetch(
