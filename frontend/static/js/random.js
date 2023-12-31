@@ -118,12 +118,9 @@ document.getElementById("random").onclick = function() {
     if (viewsTo.includes("k")) {
         viewsTo = viewsTo.split("k")[0] * 1000
     }
-    if (viewsTo == "∞") {
-        viewsTo = null
-    }
 
     fetch(
-        "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}&musiconly=${musiconly}`,
+        "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}` + musiconly ? '&category=10' : '',
         {
             headers: {"visitor": localStorage.getItem('visitor')}
         }

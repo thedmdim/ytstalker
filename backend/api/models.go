@@ -63,7 +63,7 @@ func ParseQueryParams(params url.Values) *SearchCriteria {
 	}
 
 	category := params.Get("category")
-	_, err := strconv.ParseBool(category)
+	_, err := strconv.Atoi(category)
 	if err == nil {
 		sc.Category = category
 	}
@@ -96,8 +96,8 @@ func (sc *SearchCriteria) MakeWhere() string {
 	if sc.Horizonly {
 		conditions = append(conditions, "vertical = 0")
 	}
-	if sc.Musiconly {
-		conditions = append(conditions, "category = 10")
+	if sc.Category != "" {
+		conditions = append(conditions, "category = " + sc.Category)
 	}
 	if len(conditions) > 0 {
 		return "AND " + strings.Join(conditions, " AND ")
