@@ -27,10 +27,12 @@ func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
 		ytr:    ytr,
 	}
 
+	// api
 	router.PathPrefix("/api/videos/random").Methods("GET").HandlerFunc(router.GetRandom).HeadersRegexp("visitor", "[0-9]{10,20}")
 	router.PathPrefix("/api/videos/{video_id}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
 	router.PathPrefix("/api/videos/{video_id}").Methods("GET").HandlerFunc(router.GetVideo)
 
+	// front
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static"))))
 	router.PathPrefix("/").Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
