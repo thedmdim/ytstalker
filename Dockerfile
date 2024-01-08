@@ -7,4 +7,5 @@ RUN go build -v -o /usr/bin/app .
 FROM gcr.io/distroless/static-debian11
 WORKDIR /usr/bin/app
 COPY --from=builder /usr/bin/app .
+EXPOSE 80
 ENTRYPOINT app

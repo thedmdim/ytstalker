@@ -171,7 +171,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		
+
 		err = s.StoreVideos(conn, results)
 		if err != nil {
 			log.Println("couldn't store found videos", err.Error())

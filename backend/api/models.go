@@ -97,7 +97,7 @@ func (sc *SearchCriteria) MakeWhere() string {
 		conditions = append(conditions, "vertical = 0")
 	}
 	if sc.Category != "" {
-		conditions = append(conditions, "category = " + sc.Category)
+		conditions = append(conditions, "category = "+sc.Category)
 	}
 	if len(conditions) > 0 {
 		return "AND " + strings.Join(conditions, " AND ")

@@ -20,7 +20,7 @@ func main() {
 	config := conf.ParseConfig("conf.json")
 
 	// prepare db
-	db, err := sqlitex.Open(config.DSN, 0, 100)
+	db, err := sqlitex.Open(config.DSN, 0, config.DbPoolSize)
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}
@@ -65,5 +65,5 @@ func main() {
 		log.Fatalln("error gracefully closing db:", err.Error())
 	}
 	log.Println("successfully closed db", "\n", "thanks :)")
-	
+
 }
