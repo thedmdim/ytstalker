@@ -3,7 +3,6 @@ WORKDIR /usr/src/app
 COPY go.mod .
 RUN go mod download
 COPY . .
-RUN go mod download && go mod verify
 RUN go build -v -o /usr/bin/app .
 
 FROM gcr.io/distroless/static-debian11
