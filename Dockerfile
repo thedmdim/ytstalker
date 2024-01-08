@@ -5,8 +5,7 @@ RUN go mod download
 COPY . .
 RUN go build -v -o /usr/bin/app .
 
-FROM gcr.io/distroless/static-debian11
-WORKDIR /usr/bin
-COPY --from=builder /usr/bin/app .
+FROM alpine
+COPY --from=builder /usr/bin/app /usr/bin/app
 EXPOSE 80
 CMD ["/usr/bin/app"]
