@@ -15,8 +15,8 @@ var templates = template.Must(template.ParseGlob("frontend/*/*.html"))
 
 type Router struct {
 	mux.Router
-	db     *sqlitex.Pool
-	ytr    *youtube.YouTubeRequester
+	db  *sqlitex.Pool
+	ytr *youtube.YouTubeRequester
 }
 
 func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {

@@ -14,8 +14,6 @@ services:
       - traefik.http.routers.ytstalker.rule=Host(`ytstalker.fun`)
       - traefik.http.routers.ytstalker.entrypoints=websecure
       - traefik.http.routers.ytstalker.tls.certresolver=letsencrypt
-    ports:
-      - 4000:4000
     volumes:
       - ${PWD}/server.db:/server.db:rw
     networks:

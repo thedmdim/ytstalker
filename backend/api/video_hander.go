@@ -42,12 +42,12 @@ func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res.Video = &Video{
-		ID: stmt.GetText("id"),
+		ID:         stmt.GetText("id"),
 		UploadedAt: stmt.GetInt64("uploaded"),
-		Title: stmt.GetText("title"),
-		Views: stmt.GetInt64("views"),
-		Vertical: stmt.GetBool("vertical"),
-		Category: stmt.GetInt64("category"),
+		Title:      stmt.GetText("title"),
+		Views:      stmt.GetInt64("views"),
+		Vertical:   stmt.GetBool("vertical"),
+		Category:   stmt.GetInt64("category"),
 	}
 	err = stmt.Reset()
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 	var found bool
 	for !found {
 		results := make(map[string]*Video)
-		
+
 		searchResult, err := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
@@ -126,12 +126,12 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 			}
 			results[item.Id.VideoId] = &video
 		}
-	
+
 		ids := make([]string, len(results))
 		for _, video := range results {
 			ids = append(ids, video.ID)
 		}
-	
+
 		videoInfoResult, err := s.ytr.VideosInfo(ids)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
@@ -143,7 +143,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 			video.Category, _ = strconv.ParseInt(item.Snippet.CategoryId, 10, 64)
 			video.Views, _ = strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
 		}
-	
+
 		for videoId, video := range results {
 			short, err := s.ytr.IsShort(videoId)
 			if err != nil {
@@ -158,7 +158,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 				delete(results, videoId)
 			}
 		}
-	
+
 		for _, video := range results {
 			if searchCriteria.CheckVideo(video) {
 				response.Video = video
@@ -171,14 +171,12 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-	
-		errs := s.StoreVideos(conn, results)
-		if len(errs) > 0 {
-			log.Println("[couldn't store found videos]")
-			for _, e := range errs {
-				log.Println(e.Error())
-			}
+		
+		err = s.StoreVideos(conn, results)
+		if err != nil {
+			log.Println("couldn't store found videos", err.Error())
 		}
+		log.Println(len(results), "found videos stored")
 	}
 }
 
@@ -225,14 +223,11 @@ func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 	return video, nil
 }
 
-func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []error {
-	log.Println("store found videos", len(videos))
-	var errs []error
+func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error {
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
 	if err != nil {
-		errs = append(errs, err)
-		return errs
+		return err
 	}
 	defer endFn(&err)
 
@@ -246,12 +241,11 @@ func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) []erro
 		stmt.BindBool(5, video.Vertical)
 		stmt.BindInt64(6, int64(video.Category))
 
-		if _, e := stmt.Step(); e != nil {
-			errs = append(errs, fmt.Errorf("%s %w", video.ID, e))
+		if _, err := stmt.Step(); err != nil {
+			return fmt.Errorf("%s %w", video.ID, err)
 		}
 		if err := stmt.Reset(); err != nil {
-			errs = append(errs, fmt.Errorf("error resetting stmt: %w", err))
-			return errs
+			return fmt.Errorf("error resetting stmt: %w", err)
 		}
 	}
 	return nil

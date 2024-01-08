@@ -13,7 +13,7 @@ type Message struct {
 }
 
 type RandomResponse struct {
-	Video     *Video     `json:"video,omitempty"`
+	Video     *Video    `json:"video,omitempty"`
 	Reactions Reactions `json:"reactions"`
 }
 
@@ -38,10 +38,10 @@ type Reactions struct {
 
 type SearchCriteria struct {
 	ViewsFrom string
-	ViewsTo string
+	ViewsTo   string
 	YearsFrom string
-	YearsTo string
-	Category string
+	YearsTo   string
+	Category  string
 	Horizonly bool
 	Musiconly bool
 }
