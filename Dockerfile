@@ -3,7 +3,7 @@ WORKDIR /usr/src/app
 COPY go.mod .
 RUN go mod download
 COPY . .
-RUN go CGO_ENABLED=0 build -v -o /usr/bin/app .
+RUN CGO_ENABLED=0 go build -v -o /usr/bin/app .
 
 FROM alpine
 WORKDIR /usr/bin/app
