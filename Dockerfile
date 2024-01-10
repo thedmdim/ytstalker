@@ -10,4 +10,4 @@ WORKDIR /usr/bin/ytstalker
 COPY --from=builder /usr/bin/ytstalker/app .
 COPY frontend /usr/bin/ytstalker/frontend
 EXPOSE 80
-CMD ["/usr/bin/backend"]
+CMD ["/usr/bin/ytstalker/app"]
