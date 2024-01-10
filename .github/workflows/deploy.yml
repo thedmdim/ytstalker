@@ -3,29 +3,17 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - master
+      - compose2
 
 jobs:
-  deploy:
+  publish:
+    name: Publish
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.x'
+      - uses: actions/checkout@v3
 
-      - name: Install SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-
-      - name: SSH into the server and update the code
-        run: |
-          ssh $SERVER_USERNAME@$SERVER_IP 'cd /root/ytstalker && git pull && export PATH=$PATH:/usr/local/go/bin && go build . && systemctl restart ytstalker.service'
-        env:
-          SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
+      - uses: ko-build/setup-ko@v0.6
+      - run: ko build
