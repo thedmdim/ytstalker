@@ -1,11 +1,13 @@
-FROM golang:1.21 as builder
-WORKDIR /build
+FROM golang:1.20 as builder
+WORKDIR /usr/src/app
 COPY go.mod .
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -v -o /app  .
+RUN go CGO_ENABLED=0 build -v -o /usr/bin/app .
 
 FROM alpine
-COPY --from=builder /app /app
+WORKDIR /usr/bin/app
+COPY --from=builder /usr/bin/app .
+COPY frontend .
 EXPOSE 80
-CMD ["/app"]
+CMD ["/usr/bin/app"]
