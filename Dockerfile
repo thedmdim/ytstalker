@@ -6,6 +6,6 @@ COPY . .
 RUN go build -v -o /app  .
 
 FROM alpine
-COPY --from=builder app /bin/app
+COPY --from=builder /app /app
 EXPOSE 80
-CMD ["/bin/app"]
+CMD ["/app"]
