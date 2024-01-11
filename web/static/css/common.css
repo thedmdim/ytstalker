@@ -1,0 +1,81 @@
+html {
+	height: 100%;
+	background-size: 450px;
+	image-rendering: pixelated;
+	background-image: url(/static/pics/sunset.png);
+}
+
+#logo{
+    font-size:3em;
+    /* text-decoration: none; */
+    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    background-image: linear-gradient(-2deg,#d367c1 10%,#ab79d6 70%);
+    line-height: .8;
+    font-weight:800;
+}
+
+body {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-gap: 20px;
+	max-width: 900px;
+	margin: auto;
+    background-color: white;
+    font-family: monospace;
+    font-size: 1.4em;
+	padding: 0.5em 1em;
+    border-radius: 0 0 7px 7px;
+}
+
+header, footer {
+	grid-column: 1 / -1;
+}
+
+footer {
+	text-align: left;
+}
+
+
+
+
+/* dark mode */
+#dark-mode {
+  display: none;
+}
+
+label[for='dark-mode'] {
+    font-size: 2em;
+    float: right;
+}
+
+label[for='dark-mode']::after {
+    content: "🌚";
+}
+
+:checked + label[for='dark-mode']::after {
+    content: "🌝";
+}
+
+.dark{
+    background-color: #2A2A3A;
+    color: #EEEEEE;
+}
+
+.dark img.invert{
+    filter: invert(100%);
+}
+
+.dark a:link { color: lightskyblue; }
+.dark a:visited { color: #6d4b8d; }
+.dark a:hover { color: #ffffff; }
+.dark a:active { color: #ff4040; text-decoration:none; font-weight:normal; }
+
+.night{
+	background-image: url(/static/pics/night.png);
+}
+
+div.highlight pre{
+    padding: 1em;
+    border-radius: 7px;
+}
