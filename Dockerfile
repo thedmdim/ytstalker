@@ -1,6 +1,6 @@
 FROM golang:1.21 as builder
 WORKDIR /usr/src/ytstalker
-COPY go.mod .
+COPY go.mod go.sum .
 RUN go mod download
 COPY app app/
 RUN ls
