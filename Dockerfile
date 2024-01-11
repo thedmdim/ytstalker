@@ -6,7 +6,7 @@ COPY . .
 RUN ls
 RUN CGO_ENABLED=0 go build -v -o /usr/bin/ytstalker/app ./app
 
-FROM alpine
+FROM gcr.io/distroless/static-debian11
 WORKDIR /usr/bin/ytstalker
 COPY --from=builder /usr/bin/ytstalker/app .
 COPY web /usr/bin/ytstalker/web/
