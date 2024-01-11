@@ -4,7 +4,7 @@ COPY go.mod .
 RUN go mod download
 COPY app app/
 RUN ls
-RUN CGO_ENABLED=0 go build -v -o /usr/bin/ytstalker/app .
+RUN CGO_ENABLED=0 go build -v -o /usr/bin/ytstalker/app ./app
 
 FROM alpine
 WORKDIR /usr/bin/ytstalker
