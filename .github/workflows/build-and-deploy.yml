@@ -3,7 +3,7 @@ name: build image, publish and deploy
 on:
   push:
     branches:
-      - compose2
+      - master
 
 jobs:
   publish:
@@ -17,8 +17,8 @@ jobs:
       - uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - run: |
           docker build -t ghcr.io/thedmdim/ytstalker:latest .
           docker push ghcr.io/thedmdim/ytstalker:latest
@@ -41,7 +41,7 @@ jobs:
 
       - name: SSH into the server and update the code
         run: |
-          ssh $SERVER_USERNAME@$SERVER_IP 'docker compose -f /root/ytstalker/docker-compose.yml up -d'
+          ssh $SERVER_USERNAME@$SERVER_IP 'docker compose -f /root/ytstalker/docker-compose.yml up --pull always -d app'
         env:
           SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
           SERVER_IP: ${{ secrets.SERVER_IP }}

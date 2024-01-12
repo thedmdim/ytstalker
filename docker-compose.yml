@@ -10,7 +10,7 @@ services:
     restart: always
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ytstalker.rule=Host(`dmkit.ru`)
+      - traefik.http.routers.ytstalker.rule=Host(`ytstalker.fun`)
       - traefik.http.routers.ytstalker.entrypoints=websecure
       - traefik.http.routers.ytstalker.tls.certresolver=letsencrypt
     volumes:
@@ -27,9 +27,8 @@ services:
     image: docker.io/traefik
     restart: always
     command:
-      - --log.level=DEBUG
-      - --api.insecure=true
-      - --api.dashboard=true
+      - --api.insecure=false
+      - --api.dashboard=false
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --global.sendAnonymousUsage=false
@@ -44,7 +43,7 @@ services:
       
       # let's encrypt resolver
       - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.email=thedmdim@gmail.com
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     ports:
       - 80:80
