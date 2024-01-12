@@ -21,7 +21,7 @@ func ParseConfig() *Config {
 
 	config.DSN = os.Getenv("DSN")
 	if config.DSN == "" {
-		config.DSN = "file:server.db"
+		config.DSN = "server.db"
 	}
 
 	config.YtApiKeys = strings.Split(os.Getenv("YT_API_KEYS"), ",")

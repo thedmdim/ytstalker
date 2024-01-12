@@ -6,18 +6,17 @@ networks:
 
 services:
   app:
-    build:
-      context: .
+    image: ghcr.io/thedmdim/ytstalker
     restart: always
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ytstalker.rule=Host(`ytstalker.fun`)
+      - traefik.http.routers.ytstalker.rule=Host(`dmkit.ru`)
       - traefik.http.routers.ytstalker.entrypoints=websecure
       - traefik.http.routers.ytstalker.tls.certresolver=letsencrypt
     volumes:
-      - ${PWD}/server.db:/server.db:rw
+      - ./db:/usr/bin/ytstalker/db
     environment:
-      DSN: ${DSN}
+      DSN: db/${DSN:-server.db}
       YT_API_KEYS: ${YT_API_KEYS}
       YT_API_MAX_TRIES: ${YT_API_MAX_TRIES}
 

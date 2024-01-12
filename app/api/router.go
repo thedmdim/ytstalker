@@ -33,7 +33,7 @@ func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
 	router.PathPrefix("/api/videos/{video_id}").Methods("GET").HandlerFunc(router.GetVideo)
 
 	// pages
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static"))))
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web`/static"))))
 	router.PathPrefix("/").Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			err := templates.ExecuteTemplate(w, "random.html", nil)
