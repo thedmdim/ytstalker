@@ -41,7 +41,7 @@ jobs:
 
       - name: SSH into the server and update the code
         run: |
-          ssh $SERVER_USERNAME@$SERVER_IP 'docker compose up -f /root/ytstalker/docker-compose.yml -d'
+          ssh $SERVER_USERNAME@$SERVER_IP 'docker compose -f /root/ytstalker/docker-compose.yml up -d'
         env:
           SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
