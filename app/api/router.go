@@ -3,7 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
-	"ytstalker/backend/youtube"
+	"ytstalker/app/youtube"
 
 	"html/template"
 
@@ -11,12 +11,12 @@ import (
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
-var templates = template.Must(template.ParseGlob("frontend/*/*.html"))
+var templates = template.Must(template.ParseGlob("web/*/*.html"))
 
 type Router struct {
 	mux.Router
-	db     *sqlitex.Pool
-	ytr    *youtube.YouTubeRequester
+	db  *sqlitex.Pool
+	ytr *youtube.YouTubeRequester
 }
 
 func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
@@ -32,8 +32,8 @@ func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
 	router.PathPrefix("/api/videos/{video_id}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
 	router.PathPrefix("/api/videos/{video_id}").Methods("GET").HandlerFunc(router.GetVideo)
 
-	// front
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("frontend/static"))))
+	// pages
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 	router.PathPrefix("/").Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			err := templates.ExecuteTemplate(w, "random.html", nil)

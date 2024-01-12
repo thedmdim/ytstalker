@@ -2,7 +2,7 @@ package youtube
 
 // models for search endpoint
 type SearchResponse struct {
-	Items []SearchItem `json:"items"`
+	Items    []SearchItem   `json:"items"`
 	PageInfo SearchPageInfo `json:"pageInfo"`
 }
 
@@ -11,7 +11,7 @@ type SearchPageInfo struct {
 }
 
 type SearchItem struct {
-	Id SearchId `json:"id"`
+	Id      SearchId      `json:"id"`
 	Snippet SearchSnippet `json:"snippet"`
 }
 
@@ -21,7 +21,7 @@ type SearchId struct {
 
 type SearchSnippet struct {
 	PublishedAt string `json:"publishedAt"`
-	Title string `json:"title"`
+	Title       string `json:"title"`
 }
 
 // models for videos endpoint
@@ -30,10 +30,9 @@ type VideosResponse struct {
 }
 
 type VideosItem struct {
-	Id string `json:"id"`
+	Id         string           `json:"id"`
 	Statistics VideosStatistics `json:"statistics"`
-	Snippet VideosSnippet `json:"snippet"`
-	
+	Snippet    VideosSnippet    `json:"snippet"`
 }
 
 type VideosStatistics struct {

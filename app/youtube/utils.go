@@ -11,15 +11,15 @@ import (
 
 var ErrorApiQuota = errors.New("YouTube API quota exceeded")
 var ErrorMaxTries = errors.New("you've reached max api tries limit")
-var MaxTriesLimit = 100
+
 
 func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 	// Just wrap http.Get to add http code errors
 	// retries with fresh api keys if provided
 
-	for i := 1; i < MaxTriesLimit; i++ {
+	for i := 1; i < y.conf.YtApiMaxTries; i++ {
 		q := req.URL.Query()
-		q.Add("key", y.conf.YouTubeApiKeys[y.currentApiKeyN])
+		q.Add("key", y.conf.YtApiKeys[y.currentApiKeyN])
 		req.URL.RawQuery = q.Encode()
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -27,7 +27,7 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 		}
 		if res.StatusCode == 403 {
 			log.Println("YouTube API quota exceeded, I'll try to use another API key..")
-			if len(y.conf.YouTubeApiKeys) > y.currentApiKeyN + 1 {
+			if len(y.conf.YtApiKeys) > y.currentApiKeyN+1 {
 				y.currentApiKeyN++
 				continue
 			}
@@ -41,15 +41,14 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 	return nil, ErrorMaxTries
 }
 
-
 const base64range string = "0123456789abcdefghijklmnopqrstuvwxyz-_"
 
 func RandomYoutubeVideoId() string {
-	/* 
-	we don't need uppercase and downcase both presented
-	because api search isn't case sensetive
+	/*
+		we don't need uppercase and downcase both presented
+		because api search isn't case sensetive
 	*/
-	
+
 	var id []byte
 
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -59,4 +58,3 @@ func RandomYoutubeVideoId() string {
 
 	return string(id)
 }
-

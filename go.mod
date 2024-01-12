@@ -18,10 +18,3 @@ require (
 	modernc.org/memory v1.6.0 // indirect
 	zombiezen.com/go/sqlite v0.13.1
 )
-
-require golang.org/x/crypto v0.14.0
-
-require (
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-)
