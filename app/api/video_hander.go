@@ -243,10 +243,13 @@ func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error 
 		stmt.BindInt64(6, int64(video.Category))
 
 		if _, err := stmt.Step(); err != nil {
-			return fmt.Errorf("error stepping stmt: %w", err)
+			return fmt.Errorf("stmt.Step: %w", err)
+		}
+		if err := stmt.ClearBindings(); err != nil {
+			return fmt.Errorf("stmt.ClearBindings: %w", err)
 		}
 		if err := stmt.Reset(); err != nil {
-			return fmt.Errorf("error resetting stmt: %w", err)
+			return fmt.Errorf("stmt.Reset: %w", err)
 		}
 	}
 	return nil
