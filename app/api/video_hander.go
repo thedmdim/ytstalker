@@ -245,11 +245,11 @@ func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error 
 		if _, err := stmt.Step(); err != nil {
 			return fmt.Errorf("stmt.Step: %w", err)
 		}
-		if err := stmt.ClearBindings(); err != nil {
-			return fmt.Errorf("stmt.ClearBindings: %w", err)
-		}
 		if err := stmt.Reset(); err != nil {
 			return fmt.Errorf("stmt.Reset: %w", err)
+		}
+		if err := stmt.ClearBindings(); err != nil {
+			return fmt.Errorf("stmt.ClearBindings: %w", err)
 		}
 	}
 	return nil
