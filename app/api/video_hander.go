@@ -174,9 +174,10 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 
 		err = s.StoreVideos(conn, results)
 		if err != nil {
-			log.Println("couldn't store found videos", err.Error())
+			log.Println("couldn't store found videos:", err.Error())
+		} else {
+			log.Println(len(results), "found videos stored")
 		}
-		log.Println(len(results), "found videos stored")
 	}
 }
 
@@ -227,7 +228,7 @@ func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error 
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating a trasaction: %w", err)
 	}
 	defer endFn(&err)
 
@@ -242,7 +243,7 @@ func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error 
 		stmt.BindInt64(6, int64(video.Category))
 
 		if _, err := stmt.Step(); err != nil {
-			return fmt.Errorf("%s %w", video.ID, err)
+			return fmt.Errorf("error stepping stmt: %w", err)
 		}
 		if err := stmt.Reset(); err != nil {
 			return fmt.Errorf("error resetting stmt: %w", err)
