@@ -144,8 +144,8 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 			video.Views, _ = strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
 		}
 
-		for videoId, video := range results {
-			short, err := s.ytr.IsShort(videoId)
+		for _, video := range results {
+			short, err := s.ytr.IsShort(video.ID, video.UploadedAt)
 			if err != nil {
 				log.Println("error defining short:", err.Error())
 			}
@@ -228,7 +228,7 @@ func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error 
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
 	if err != nil {
-		return fmt.Errorf("error creating a trasaction: %w", err)
+		return fmt.Errorf("error creating a transaction: %w", err)
 	}
 	defer endFn(&err)
 
@@ -259,7 +259,7 @@ func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating a transaction: %w", err)
 	}
 	defer endFn(&err)
 

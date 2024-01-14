@@ -70,8 +70,14 @@ func (y *YouTubeRequester) VideosInfo(ids []string) (*VideosResponse, error) {
 	return r, nil
 }
 
-func (y *YouTubeRequester) IsShort(id string) (bool, error) {
-	res, err := y.noRedirectClient.Head(fmt.Sprintf("https://www.youtube.com/shorts/%s", id))
+func (y *YouTubeRequester) IsShort(videoID string, uploadDate int64) (bool, error) {
+	
+	// youtube shorts were released in 14.09.2020
+	if uploadDate < 1600041600 {
+		return false, nil
+	}
+
+	res, err := y.noRedirectClient.Head(fmt.Sprintf("https://www.youtube.com/shorts/%s", videoID))
 	if err != nil {
 		return false, err
 	}
