@@ -34,10 +34,12 @@ header, footer {
 
 footer {
 	text-align: left;
+    margin-bottom: 1em;
 }
 
-
-
+footer a {
+    margin-right: 2em;
+}
 
 /* dark mode */
 #dark-mode {

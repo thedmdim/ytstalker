@@ -5,27 +5,36 @@
     grid-template-columns: 1fr;
 }
 
-#cool-or-trash {
+#reactions {
     display: grid;
+    grid-gap: 1em;
     justify-items: stretch;
     grid-template-columns: 1fr 1fr 1fr;
 }    
 
-#cool-or-trash button {
+#reactions button {
     font-size: 1em;
-    border:0;
-    border-radius: 3px;
     height: 2.5em;
+}
+
+#cool, #trash {
+    border: 0;
     color: white;
-}  
+    border-radius: 3px;
+}
 
 #cool {
     background: linear-gradient(to left, #c8a4e7, #d367c1);
 }
 
+#link {
+    border: 2px dashed black;
+    background: white ;
+    border-radius: 6px;
+}
+
 #trash {
     background: linear-gradient(to right, #c8a4e7, #5f61de);
-    grid-column: 3 / -1;
 }
     
 #rating {

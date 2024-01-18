@@ -82,6 +82,8 @@ yearsSlider.on('update', shiftColors);
 
 function ShowVideo(data) {
 
+    localStorage.setItem('lastSeen', data.video.id)
+
     document.getElementById("video").src = `https://www.youtube.com/embed/${data.video.id}`
 
     const date = new Date(data.video.uploaded * 1000)
@@ -95,8 +97,6 @@ function ShowVideo(data) {
     
     cool.innerText = [cool.innerText.split(" ")[0], data.reactions.cools].join(" ")
     trash.innerText = [trash.innerText.split(" ")[0], data.reactions.trashes].join(" ")
-
-    localStorage.setItem('lastSeen', data.video.id)
 }
 
 document.getElementById("random").onclick = function() {
@@ -122,9 +122,12 @@ document.getElementById("random").onclick = function() {
         viewsTo = 'inf'
     }
 
-    let apiUrl = "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}&horizonly=${horizonly}`
+    let apiUrl = "/api/videos/random?" + `views=${viewsFrom}-${viewsTo}&years=${yearsRange[0]}-${yearsRange[1]}`
     if (musiconly) {
         apiUrl += "&category=10"
+    }
+    if (horizonly) {
+        apiUrl += "&horizonly=true"
     }
 
     fetch(
@@ -135,32 +138,42 @@ document.getElementById("random").onclick = function() {
     )
     .then(response => {
         console.log("response status", response.status)
-        mainButton.innerText = "searching..."
+        this.innerText = "searching..."
         if (response.ok) {
             return response.json();
         } else {
-            mainButton.innerText = data.msg
+            this.innerText = data.msg
             mainButtonMessageDelay = 2000
         }
     })
     .then(data => ShowVideo(data))
     .catch(error => {
         mainButtonMessageDelay = 2000
-        mainButton.innerText = "cannot fetch api"
+        this.innerText = "cannot fetch api"
     })
     .finally(() => {
         setTimeout(() => {
                 this.style.filter = "";
                 this.disabled = false;
-                mainButton.innerText = beforeText
+                this.innerText = beforeText
             }, 
             mainButtonMessageDelay
         )
     })    
 }
 
-if (localStorage.getItem('lastSeen')) {
-    fetch(`/api/videos/${localStorage.getItem('lastSeen')}`)
+document.getElementById("link").onclick = function() {
+    navigator.clipboard.writeText(new URL("/?v=" + localStorage.getItem("lastSeen"), document.baseURI).href);
+    let beforeText = this.innerText
+    this.innerText = "Copied!"
+    setTimeout(() => {this.innerText = beforeText}, 1500)
+}
+
+const queryString = window.location.search
+const urlParams = new URLSearchParams(queryString)
+const videoID = urlParams.get('v') || localStorage.getItem('lastSeen')
+if (videoID) {
+    fetch(`/api/videos/${videoID}`)
     .then(response => response.json())
     .then(data => ShowVideo(data))
 } else {

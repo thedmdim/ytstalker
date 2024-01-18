@@ -24,10 +24,11 @@ func ParseConfig() *Config {
 		config.DSN = "server.db"
 	}
 
-	config.YtApiKeys = strings.Split(os.Getenv("YT_API_KEYS"), ",")
-	if len(config.YtApiKeys) == 0 {
+	ytApiKeys := os.Getenv("YT_API_KEYS")
+	if ytApiKeys == "" {
 		log.Fatal("You forgot to provide YouTube API keys!")
 	}
+	config.YtApiKeys = strings.Split(ytApiKeys, ",")
 
 	config.YtApiMaxTries, _ = strconv.Atoi(os.Getenv("YT_API_MAX_TRIES"))
 	if config.YtApiMaxTries == 0 {

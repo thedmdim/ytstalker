@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"ytstalker/app/api"
+	"ytstalker/app/handlers"
 	"ytstalker/app/conf"
 	"ytstalker/app/youtube"
 
@@ -20,13 +20,13 @@ func main() {
 	config := conf.ParseConfig()
 
 	// prepare db
-	db, err := sqlitex.Open(config.DSN, 0, config.DbPoolSize)
+	db, err := sqlitex.NewPool(config.DSN, sqlitex.PoolOptions{PoolSize: config.DbPoolSize})
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}
 
 	conn := db.Get(context.Background())
-	if err := sqlitex.ExecuteScript(conn, api.CreateTablesIfNotExists, nil); err != nil {
+	if err := sqlitex.ExecuteScript(conn, CreateTablesIfNotExists, nil); err != nil {
 		log.Fatal("cannot create db: ", err)
 	}
 	db.Put(conn)
@@ -36,7 +36,7 @@ func main() {
 	ytr := youtube.NewYouTubeRequester(config)
 
 	// make router
-	handler := api.NewRouter(db, ytr)
+	handler := handlers.NewRouter(db, ytr)
 	server := &http.Server{
 		Handler: handler,
 	}
