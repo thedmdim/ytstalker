@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ template "head" }}
+        <link rel="stylesheet" type="text/css" href="/static/css/random.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" integrity="sha512-qveKnGrvOChbSzAdtSs8p69eoLegyh+1hwOMbmpCViIwj7rn4oJjdmMvWOuyQlTOZgTlZA0N2PXA7iA8/2TUYA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js" integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+        <script src="/static/js/random.js" defer></script>
+        <script src="/static/js/reactions.js" defer></script>
+
+        <title>ytstalker | Random YouTube videos search</title>
+    </head>
+    <body>
+        {{ template "header" }}
+        <div id="content">
+            <iframe id="video" src="https://www.youtube.com/embed/" frameborder="0" allowfullscreen></iframe>
+            <div id="reactions">
+                <button id="cool">Cool😍</button>
+                <button id="link">Copy link</button>
+                <button id="trash">Trash🥱</button>
+            </div>
+            <div id="video-info"></div>
+
+            <button id="random">Find Random Video</button>
+
+            <fieldset>
+                <legend>Search Settings</legend>
+
+                <p>Views</p>
+                <div class="sliders" id="views-slider"></div>
+                <p>Uploaded in</p>
+                <div class="sliders" id="years-slider"></div>
+            
+                <p>
+                    <input id="horizonly" type="checkbox" />
+                    <label for="horizonly">Exclude Vertical</label>
+                </p>
+                <p>
+                    <input id="musiconly" type="checkbox" />
+                    <label for="musiconly">Only Music</label>
+                </p>
+            </fieldset>
+            
+        </div>
+        {{ template "footer" }}
+    </body>
+    
+</html>
