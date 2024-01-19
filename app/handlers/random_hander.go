@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -251,7 +252,10 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 	visitor := r.Header.Get("visitor")
 	params := r.URL.Query()
 
-	conn := s.db.Get(r.Context())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	defer cancel()
+
+	conn := s.db.Get(ctx)
 	defer s.db.Put(conn)
 
 	searchCriteria := ParseQueryParams(params)

@@ -17,7 +17,7 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 	// Just wrap http.Get to add http code errors
 	// retries with fresh api keys if provided
 
-	for i := 1; i < y.conf.YtApiMaxTries; i++ {
+	for {
 		q := req.URL.Query()
 		q.Add("key", y.conf.YtApiKeys[y.currentApiKeyN])
 		req.URL.RawQuery = q.Encode()
@@ -38,7 +38,6 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 		}
 		return res, err
 	}
-	return nil, ErrorMaxTries
 }
 
 const base64range string = "0123456789abcdefghijklmnopqrstuvwxyz-_"

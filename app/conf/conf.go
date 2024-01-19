@@ -9,7 +9,6 @@ import (
 
 type Config struct {
 	YtApiKeys     []string
-	YtApiMaxTries int
 	DSN           string
 	DbPoolSize int
 }
@@ -29,11 +28,6 @@ func ParseConfig() *Config {
 		log.Fatal("You forgot to provide YouTube API keys!")
 	}
 	config.YtApiKeys = strings.Split(ytApiKeys, ",")
-
-	config.YtApiMaxTries, _ = strconv.Atoi(os.Getenv("YT_API_MAX_TRIES"))
-	if config.YtApiMaxTries == 0 {
-		config.YtApiMaxTries = 100
-	}
 
 	config.DbPoolSize, _ = strconv.Atoi(os.Getenv("DB_POOL_SIZE"))
 	if config.DbPoolSize == 0 {
