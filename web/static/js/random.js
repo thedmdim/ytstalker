@@ -1,5 +1,5 @@
 let viewsSliderContainer = document.getElementById("views-slider");
-let views = ["0", "10", "50", "150", "500", "1k", "5k", "15K", "∞"]
+let views = ["0", "10", "50", "150", "500", "1k", "5k", "15k", "∞"]
 
 let yearsSliderContainer = document.getElementById("years-slider");
 let currentYear = new Date().getFullYear()
