@@ -29,8 +29,13 @@
 
 #link {
     border: 2px dashed black;
-    background: white ;
+    background: transparent;
     border-radius: 6px;
+}
+
+.dark #link {
+    border: 2px dashed white;
+    color:white;
 }
 
 #trash {

@@ -37,7 +37,7 @@ func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
 	router.PathPrefix("/rating").Methods("GET").HandlerFunc(router.GetRating)
 	router.PathPrefix("/").Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			err := templates.ExecuteTemplate(w, "index.html", nil)
+			err := templates.ExecuteTemplate(w, "random.html", nil)
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -51,7 +51,7 @@ func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Do stuff here
-		log.Println(r.RemoteAddr, r.RequestURI)
+		log.Println(r.RequestURI)
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
