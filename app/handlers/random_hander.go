@@ -286,7 +286,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 
 	// go ask youtube api for random video
 	var found bool
-	for !found {
+	for !found && r.Context().Err() == nil {
 		results := make(map[string]*Video)
 
 		searchResult, err := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
