@@ -56,7 +56,7 @@ func main() {
 			if err != nil {
 				log.Println("background random search: couldn't store found videos:", err.Error())
 			} else {
-				log.Println(len(results), "background random search: found videos stored")
+				log.Println("background random search:", len(results), "found videos stored")
 			}
 			db.Put(conn)
 		}
