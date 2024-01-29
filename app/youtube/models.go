@@ -42,9 +42,3 @@ type VideosStatistics struct {
 type VideosSnippet struct {
 	CategoryId string `json:"categoryId"`
 }
-
-// settings
-type Settings struct {
-	YouTubeApiUrl string `json:"youtube_api_url"`
-	YouTubeApiKey string `json:"youtube_api_key"`
-}

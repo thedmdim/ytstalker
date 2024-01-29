@@ -266,9 +266,9 @@ func (s *Router) FindRandomVideos() (map[string]*Video, error) {
 		results[item.Id.VideoId] = &video
 	}
 
-	ids := make([]string, len(results))
-	for _, video := range results {
-		ids = append(ids, video.ID)
+	var ids []string
+	for videoID := range results {
+		ids = append(ids, videoID)
 	}
 
 	videoInfoResult, err := s.ytr.VideosInfo(ids)
