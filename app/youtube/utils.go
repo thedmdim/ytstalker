@@ -29,10 +29,11 @@ func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 			log.Println("YouTube API quota exceeded, I'll try to use another API key..")
 			if len(y.conf.YtApiKeys) > y.currentApiKeyN+1 {
 				y.currentApiKeyN++
+				continue
 			} else {
 				y.currentApiKeyN = 0
+				return nil, ErrorApiQuota
 			}
-			return nil, ErrorApiQuota
 		}
 		if res.StatusCode != 200 {
 			return nil, fmt.Errorf("%d %s", res.StatusCode, req.URL.String())
