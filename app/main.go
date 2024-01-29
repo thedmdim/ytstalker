@@ -41,6 +41,27 @@ func main() {
 		Handler: handler,
 	}
 
+	// search random video in background
+	go func() {
+		for range time.NewTicker(time.Hour).C {
+			
+			results, err := handler.FindRandomVideos()
+			if err != nil {
+				log.Println("background random search:", err.Error())
+				continue
+			}
+			
+			conn := db.Get(context.Background())
+			err = handler.StoreVideos(conn, results)
+			if err != nil {
+				log.Println("background random search: couldn't store found videos:", err.Error())
+			} else {
+				log.Println(len(results), "background random search: found videos stored")
+			}
+			db.Put(conn)
+		}
+	}()
+
 	// serve 80
 	go func() {
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
