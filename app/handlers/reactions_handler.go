@@ -21,16 +21,16 @@ func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	visitor := r.Header.Get("visitor")
-	videoID := vars["video_id"]
+	camID := vars["cam_id"]
 	reaction := vars["reaction"]
 
 	conn := s.db.Get(r.Context())
 	defer s.db.Put(conn)
 
 	stmt := conn.Prep(`
-		INSERT INTO reactions (cool, visitor_id, video_id)
+		INSERT INTO reactions (cool, visitor_id, cam_id)
 		VALUES(?, ?, ?)
-		ON CONFLICT (visitor_id, video_id)
+		ON CONFLICT (visitor_id, cam_id)
 		DO UPDATE SET cool=?
 	`)
 
@@ -41,12 +41,12 @@ func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
 
 	stmt.BindBool(1, reactionBool)
 	stmt.BindText(2, visitor)
-	stmt.BindText(3, videoID)
+	stmt.BindText(3, camID)
 	stmt.BindBool(4, reactionBool)
 	stmt.Step()
 	stmt.Reset()
 
-	stats, err := GetReaction(conn, videoID)
+	stats, err := GetReaction(conn, camID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		encoder.Encode(Message{"couldn't save reaction"})
@@ -55,15 +55,15 @@ func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	encoder.Encode(stats)
 }
 
-func GetReaction(conn *sqlite.Conn, videoID string) (Reactions, error) {
+func GetReaction(conn *sqlite.Conn, camID string) (Reactions, error) {
 	r := Reactions{}
 
 	stmt := conn.Prep(`
 			SELECT SUM(cool = 1) AS cools, SUM(cool = 0) AS trashes
 			FROM reactions
-			WHERE video_id = ?
+			WHERE cam_id = ?
 	`)
-	stmt.BindText(1, videoID)
+	stmt.BindText(1, camID)
 	_, err := stmt.Step()
 	if err != nil {
 		return r, err
@@ -72,14 +72,8 @@ func GetReaction(conn *sqlite.Conn, videoID string) (Reactions, error) {
 	r.Cools = stmt.GetInt64("cools")
 	r.Trashes = stmt.GetInt64("trashes")
 
-	err = stmt.Reset()
-	if err != nil {
-		return r, err
-	}
-	err = stmt.ClearBindings()
-	if err != nil {
-		return r, err
-	}
+	stmt.Reset()
+	stmt.ClearBindings()
 
 	return r, nil
 }

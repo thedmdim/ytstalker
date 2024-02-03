@@ -1,13 +1,14 @@
 package main
 
 const CreateTablesIfNotExists = `
-	CREATE TABLE IF NOT EXISTS videos
+	CREATE TABLE IF NOT EXISTS cams
 	(
-		id STRING PRIMARY KEY,
-		ip STRING,
+		id INTEGER PRIMARY KEY,
+		addr STRING,
 		adminka STRING,
 		stream STRING,
-		country string
+		manufacturer STRING,
+		country STRING
 	);
 
 	CREATE TABLE IF NOT EXISTS visitors (
@@ -15,12 +16,12 @@ const CreateTablesIfNotExists = `
 		last_seen INTEGER
 	);
 
-	CREATE TABLE IF NOT EXISTS videos_visitors
+	CREATE TABLE IF NOT EXISTS cams_visitors
 	(	
 		visitor_id STRING,
-		video_id STRING,
-		PRIMARY KEY (visitor_id, video_id),
-		FOREIGN KEY (video_id) REFERENCES videos (id) ON DELETE CASCADE,
+		cam_id INTEGER,
+		PRIMARY KEY (visitor_id, cam_id),
+		FOREIGN KEY (cam_id) REFERENCES cams (id) ON DELETE CASCADE,
 		FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE
 	);
 
@@ -28,9 +29,9 @@ const CreateTablesIfNotExists = `
 	(
 		cool INTEGER,
 		visitor_id STRING,
-		video_id STRING,
-		PRIMARY KEY (visitor_id, video_id),
-		FOREIGN KEY (video_id) REFERENCES videos (id) ON DELETE CASCADE,
+		cam_id INTEGER,
+		PRIMARY KEY (visitor_id, cam_id),
+		FOREIGN KEY (cam_id) REFERENCES videos (id) ON DELETE CASCADE,
 		FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE
 	);
 `

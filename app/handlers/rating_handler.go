@@ -9,13 +9,13 @@ import (
 )
 
 type Rating struct {
-	Best []*RatedVideo
-	Worst []*RatedVideo
+	Best  []*RatedCam
+	Worst []*RatedCam
 }
 
-type RatedVideo struct {
-	ID string
-	Title string
+type RatedCam struct {
+	ID        string
+	Title     string
 	Reactions int64
 }
 
@@ -43,7 +43,7 @@ func (s *Router) GetRating(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo, error) {
+func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedCam, error) {
 
 	var cool int64
 	if coolRated {
@@ -51,10 +51,10 @@ func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo,
 	}
 
 	stmt := conn.Prep(`
-		SELECT SUM(reactions.cool = ?) AS reactions_sum, reactions.video_id, videos.title
+		SELECT SUM(reactions.cool = ?) AS reactions_sum, reactions.cam_id, videos.title
 		FROM reactions
-		JOIN videos ON videos.id = reactions.video_id
-		GROUP BY reactions.video_id
+		JOIN videos ON videos.id = reactions.cam_id
+		GROUP BY reactions.cam_id
 		ORDER BY reactions_sum DESC
 		LIMIT ?
 	`)
@@ -62,7 +62,7 @@ func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo,
 	stmt.BindInt64(1, cool)
 	stmt.BindInt64(2, limit)
 
-	var result []*RatedVideo
+	var result []*RatedCam
 	for {
 		row, err := stmt.Step()
 		if err != nil {
@@ -70,14 +70,16 @@ func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo,
 		}
 
 		if row {
-			ratedVideo := &RatedVideo{
-				ID: stmt.GetText("video_id"),
-				Title: stmt.GetText("title"),
+			ratedVideo := &RatedCam{
+				ID:        stmt.GetText("cam_id"),
+				Title:     stmt.GetText("title"),
 				Reactions: stmt.GetInt64("reactions_sum"),
 			}
 			result = append(result, ratedVideo)
 
-		} else { break }
+		} else {
+			break
+		}
 	}
 
 	if err := stmt.Reset(); err != nil {

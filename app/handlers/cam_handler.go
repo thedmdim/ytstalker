@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
+func (s *Router) GetCamera(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(w)
 
@@ -16,14 +16,14 @@ func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
 	conn := s.db.Get(r.Context())
 	defer s.db.Put(conn)
 
-	res := &VideoWithReactions{}
+	res := &CamWithReactions{}
 
 	stmt := conn.Prep(`
 		SELECT id, uploaded, title, views, vertical, category
 		FROM videos
 		WHERE id = ?`)
 
-	stmt.BindText(1, vars["video_id"])
+	stmt.BindText(1, vars["cam_id"])
 	row, err := stmt.Step()
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
@@ -34,13 +34,13 @@ func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
 		encoder.Encode(Message{"couldn't find video"})
 		return
 	}
-	res.Video = &Video{
+	res.Cam = &Cam{
 		ID:         stmt.GetText("id"),
-		UploadedAt: stmt.GetInt64("uploaded"),
-		Title:      stmt.GetText("title"),
-		Views:      stmt.GetInt64("views"),
-		Vertical:   stmt.GetBool("vertical"),
-		Category:   stmt.GetInt64("category"),
+		Addr: stmt.GetText("addr"),
+		Adminka: stmt.GetText("addr"),
+		Stream: stmt.GetText("stream"),
+		Manufacturer: stmt.GetText("manufacturer"),
+		Country: stmt.GetText("country"),
 	}
 	err = stmt.Reset()
 	if err != nil {
@@ -48,6 +48,6 @@ func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.Reactions, _ = GetReaction(conn, res.Video.ID)
+	res.Reactions, _ = GetReaction(conn, res.Cam.ID)
 	encoder.Encode(res)
 }
