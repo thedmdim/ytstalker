@@ -4,11 +4,10 @@ const CreateTablesIfNotExists = `
 	CREATE TABLE IF NOT EXISTS videos
 	(
 		id STRING PRIMARY KEY,
-		uploaded INTEGER,
-		title STRING,
-		views INTEGER,
-		vertical INTEGER,
-		category INTEGER
+		ip STRING,
+		adminka STRING,
+		stream STRING,
+		country string
 	);
 
 	CREATE TABLE IF NOT EXISTS visitors (

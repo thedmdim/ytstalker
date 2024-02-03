@@ -3,7 +3,6 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"ytstalker/app/youtube"
 
 	"html/template"
 
@@ -16,15 +15,13 @@ var templates = template.Must(template.ParseGlob("web/*/*.html"))
 type Router struct {
 	mux.Router
 	db  *sqlitex.Pool
-	ytr *youtube.YouTubeRequester
 }
 
-func NewRouter(db *sqlitex.Pool, ytr *youtube.YouTubeRequester) *Router {
+func NewRouter(db *sqlitex.Pool) *Router {
 
 	router := &Router{
 		Router: *mux.NewRouter(),
 		db:     db,
-		ytr:    ytr,
 	}
 
 	// api

@@ -11,7 +11,6 @@ import (
 
 	"ytstalker/app/handlers"
 	"ytstalker/app/conf"
-	"ytstalker/app/youtube"
 
 	"zombiezen.com/go/sqlite/sqlitex"
 )
@@ -32,35 +31,11 @@ func main() {
 	db.Put(conn)
 	log.Println("database ready")
 
-	// init youtube api requester
-	ytr := youtube.NewYouTubeRequester(config)
-
 	// make router
-	handler := handlers.NewRouter(db, ytr)
+	handler := handlers.NewRouter(db)
 	server := &http.Server{
 		Handler: handler,
 	}
-
-	// search random video in background
-	go func() {
-		for range time.NewTicker(time.Hour).C {
-			
-			results, err := handler.FindRandomVideos()
-			if err != nil {
-				log.Println("background random search:", err.Error())
-				continue
-			}
-			
-			conn := db.Get(context.Background())
-			err = handler.StoreVideos(conn, results)
-			if err != nil {
-				log.Println("background random search: couldn't store found videos:", err.Error())
-			} else {
-				log.Println("background random search:", len(results), "found videos stored")
-			}
-			db.Put(conn)
-		}
-	}()
 
 	// serve 80
 	go func() {

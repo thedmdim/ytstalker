@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"ytstalker/app/youtube"
 
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
@@ -177,36 +176,36 @@ func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 	return video, nil
 }
 
-func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error {
+// func (s *Router) StoreVideos(conn *sqlite.Conn, videos map[string]*Video) error {
 
-	endFn, err := sqlitex.ImmediateTransaction(conn)
-	if err != nil {
-		return fmt.Errorf("error creating a transaction: %w", err)
-	}
-	defer endFn(&err)
+// 	endFn, err := sqlitex.ImmediateTransaction(conn)
+// 	if err != nil {
+// 		return fmt.Errorf("error creating a transaction: %w", err)
+// 	}
+// 	defer endFn(&err)
 
-	stmt := conn.Prep("INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES (?, ?, ?, ?, ?, ?);")
-	for _, video := range videos {
+// 	stmt := conn.Prep("INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES (?, ?, ?, ?, ?, ?);")
+// 	for _, video := range videos {
 
-		stmt.BindText(1, video.ID)
-		stmt.BindInt64(2, video.UploadedAt)
-		stmt.BindText(3, video.Title)
-		stmt.BindInt64(4, int64(video.Views))
-		stmt.BindBool(5, video.Vertical)
-		stmt.BindInt64(6, int64(video.Category))
+// 		stmt.BindText(1, video.ID)
+// 		stmt.BindInt64(2, video.UploadedAt)
+// 		stmt.BindText(3, video.Title)
+// 		stmt.BindInt64(4, int64(video.Views))
+// 		stmt.BindBool(5, video.Vertical)
+// 		stmt.BindInt64(6, int64(video.Category))
 
-		if _, err := stmt.Step(); err != nil {
-			return fmt.Errorf("stmt.Step: %w", err)
-		}
-		if err := stmt.Reset(); err != nil {
-			return fmt.Errorf("stmt.Reset: %w", err)
-		}
-		if err := stmt.ClearBindings(); err != nil {
-			return fmt.Errorf("stmt.ClearBindings: %w", err)
-		}
-	}
-	return nil
-}
+// 		if _, err := stmt.Step(); err != nil {
+// 			return fmt.Errorf("stmt.Step: %w", err)
+// 		}
+// 		if err := stmt.Reset(); err != nil {
+// 			return fmt.Errorf("stmt.Reset: %w", err)
+// 		}
+// 		if err := stmt.ClearBindings(); err != nil {
+// 			return fmt.Errorf("stmt.ClearBindings: %w", err)
+// 		}
+// 	}
+// 	return nil
+// }
 
 func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId string) error {
 
@@ -244,64 +243,6 @@ func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 	return nil
 }
 
-func (s *Router) FindRandomVideos() (map[string]*Video, error) {
-	results := make(map[string]*Video)
-
-	searchResult, err := s.ytr.Search("inurl:" + youtube.RandomYoutubeVideoId())
-	if err != nil {
-		return nil, err
-	}
-	if searchResult == nil || len(searchResult.Items) == 0 {
-		return results, nil
-	}
-
-	for _, item := range searchResult.Items {
-		video := Video{}
-		video.ID = item.Id.VideoId
-		video.Title = item.Snippet.Title
-		parsed, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
-		if err == nil {
-			video.UploadedAt = parsed.Unix()
-		}
-		results[item.Id.VideoId] = &video
-	}
-
-	var ids []string
-	for videoID := range results {
-		ids = append(ids, videoID)
-	}
-
-	videoInfoResult, err := s.ytr.VideosInfo(ids)
-	if err != nil {
-		return nil, err
-	}
-	for _, item := range videoInfoResult.Items {
-		video := results[item.Id]
-		video.Category, _ = strconv.ParseInt(item.Snippet.CategoryId, 10, 64)
-		video.Views, _ = strconv.ParseInt(item.Statistics.ViewCount, 10, 64)
-	}
-
-	for videoID, video := range results {
-		short, err := s.ytr.IsShort(video.ID, video.UploadedAt)
-		if err != nil {
-			delete(results, videoID)
-			log.Printf("error defining short (%s): %s", video.ID, err.Error())
-		} else {
-			video.Vertical = short
-		}
-	}
-
-	// clear out fucking gaming videos trash i hate it
-	for videoId, video := range results {
-		if video.Category == 20 {
-			delete(results, videoId)
-		}
-	}
-
-	return results, nil
-
-}
-
 func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -337,42 +278,4 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	log.Println("video in db not found, ask youtube api")
-
-	// go ask youtube api for random video
-	var found bool
-	for !found && r.Context().Err() == nil {
-		
-		results, err := s.FindRandomVideos()
-		if err != nil {
-			log.Println("GetRandom:", err.Error())
-			w.WriteHeader(http.StatusBadGateway)
-			return
-		}
-
-		for _, video := range results {
-			if searchCriteria.CheckVideo(video) {
-				response.Video = video
-				encoder.Encode(response)
-				found = true
-				err = s.RememberSeen(conn, visitor, video.ID)
-				if err != nil {
-					log.Println("error remembering seen:", err.Error())
-				}
-				break
-			}
-		}
-
-		err = s.StoreVideos(conn, results)
-		if err != nil {
-			log.Println("couldn't store found videos:", err.Error())
-		} else {
-			log.Println(len(results), "found videos stored")
-		}
-	}
-}
-
-func (v *Video) GetFormattedUploadDate(timestamp int64) string {
-	t := time.Unix(v.UploadedAt, 0)
-	return t.Format("02.01.06")
 }
