@@ -23,7 +23,7 @@ func ParseConfig() *Config {
 		config.DSN = "server.db"
 	}
 
-	config.YtApiKey = os.Getenv("YT_API_KEYS")
+	config.YtApiKey = os.Getenv("YT_API_KEY")
 	if config.YtApiKey == "" {
 		log.Fatal("You forgot to provide YouTube API key!")
 	}

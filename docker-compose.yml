@@ -17,7 +17,7 @@ services:
       - ./db:/usr/bin/ytstalker/db
     environment:
       DSN: db/${DSN:-server.db}
-      YT_API_KEYS: ${YT_API_KEYS}
+      YT_API_KEY: ${YT_API_KEY}
 
     networks:
       - app
