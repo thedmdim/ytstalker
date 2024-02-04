@@ -45,8 +45,7 @@ func main() {
 
 	// search random video in background
 	go func() {
-		for range time.NewTicker(time.Minute * 30).C {
-			
+		for {
 			results, err := ytr.FindRandomVideos()
 			if err != nil {
 				log.Println("background random search:", err.Error())
@@ -61,6 +60,8 @@ func main() {
 				log.Println("background random search:", len(results), "found videos stored")
 			}
 			db.Put(conn)
+
+			time.Sleep(time.Hour / 2)
 		}
 	}()
 

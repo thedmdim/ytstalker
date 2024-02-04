@@ -51,14 +51,10 @@ func (y *YouTubeRequester) FindRandomVideos() (map[string]*Video, error) {
 		ids = append(ids, "inurl:" + RandomYoutubeVideoId(6))
 	}
 
-	log.Println(ids)
-
 	searchResult, err := y.Search(strings.Join(ids, " OR "))
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println(searchResult)
 
 	if searchResult == nil || len(searchResult.Items) == 0 {
 		return results, nil
