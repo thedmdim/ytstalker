@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,10 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"ytstalker/app/handlers"
 	"ytstalker/app/conf"
+	"ytstalker/app/handlers"
 	"ytstalker/app/youtube"
 
+	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
@@ -36,23 +38,23 @@ func main() {
 	ytr := youtube.NewYouTubeRequester(config)
 
 	// make router
-	handler := handlers.NewRouter(db, ytr)
+	handler := handlers.NewRouter(db)
 	server := &http.Server{
 		Handler: handler,
 	}
 
 	// search random video in background
 	go func() {
-		for range time.NewTicker(time.Hour).C {
+		for range time.NewTicker(time.Minute * 30).C {
 			
-			results, err := handler.FindRandomVideos()
+			results, err := ytr.FindRandomVideos()
 			if err != nil {
 				log.Println("background random search:", err.Error())
 				continue
 			}
 			
 			conn := db.Get(context.Background())
-			err = handler.StoreVideos(conn, results)
+			err = StoreVideos(conn, results)
 			if err != nil {
 				log.Println("background random search: couldn't store found videos:", err.Error())
 			} else {
@@ -87,4 +89,36 @@ func main() {
 	}
 	log.Println("successfully closed db", "\n", "thanks :)")
 
+}
+
+
+func StoreVideos(conn *sqlite.Conn, videos map[string]*youtube.Video) error {
+
+	endFn, err := sqlitex.ImmediateTransaction(conn)
+	if err != nil {
+		return fmt.Errorf("error creating a transaction: %w", err)
+	}
+	defer endFn(&err)
+
+	stmt := conn.Prep("INSERT INTO videos (id, uploaded, title, views, vertical, category) VALUES (?, ?, ?, ?, ?, ?);")
+	for _, video := range videos {
+
+		stmt.BindText(1, video.ID)
+		stmt.BindInt64(2, video.UploadedAt)
+		stmt.BindText(3, video.Title)
+		stmt.BindInt64(4, int64(video.Views))
+		stmt.BindBool(5, video.Vertical)
+		stmt.BindInt64(6, int64(video.Category))
+
+		if _, err := stmt.Step(); err != nil {
+			return fmt.Errorf("stmt.Step: %w", err)
+		}
+		if err := stmt.Reset(); err != nil {
+			return fmt.Errorf("stmt.Reset: %w", err)
+		}
+		if err := stmt.ClearBindings(); err != nil {
+			return fmt.Errorf("stmt.ClearBindings: %w", err)
+		}
+	}
+	return nil
 }

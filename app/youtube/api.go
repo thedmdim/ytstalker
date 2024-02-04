@@ -13,7 +13,6 @@ import (
 type YouTubeRequester struct {
 	noRedirectClient *http.Client
 	conf             *conf.Config
-	currentApiKeyN   int
 	baseUrl          string
 }
 
@@ -54,9 +53,6 @@ func (y *YouTubeRequester) Search(query string) (*SearchResponse, error) {
 func (y *YouTubeRequester) VideosInfo(ids []string) (*VideosResponse, error) {
 
 	req, _ := http.NewRequest("GET", y.baseUrl+"/videos", nil)
-	// q := url.Values{}
-	// q.Add("part", "statistics,snippet")
-	// q.Add("id", strings.Join(ids, ","))
 	req.URL.RawQuery += fmt.Sprintf("id=%s&part=statistics,snippet", strings.Join(ids, ","))
 
 	res, err := y.Request(req)

@@ -4,13 +4,13 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 )
 
 type Config struct {
-	YtApiKeys     []string
+	YtApiKey     string
 	DSN           string
 	DbPoolSize int
+	RandomSeed int64
 }
 
 func ParseConfig() *Config {
@@ -23,11 +23,10 @@ func ParseConfig() *Config {
 		config.DSN = "server.db"
 	}
 
-	ytApiKeys := os.Getenv("YT_API_KEYS")
-	if ytApiKeys == "" {
-		log.Fatal("You forgot to provide YouTube API keys!")
+	config.YtApiKey = os.Getenv("YT_API_KEYS")
+	if config.YtApiKey == "" {
+		log.Fatal("You forgot to provide YouTube API key!")
 	}
-	config.YtApiKeys = strings.Split(ytApiKeys, ",")
 
 	config.DbPoolSize, _ = strconv.Atoi(os.Getenv("DB_POOL_SIZE"))
 	if config.DbPoolSize == 0 {
