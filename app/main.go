@@ -57,7 +57,15 @@ func main() {
 			if err != nil {
 				log.Println("background random search: couldn't store found videos:", err.Error())
 			} else {
-				log.Println("background random search:", len(results), "found videos stored")
+				counters := make(map[int]int)
+				for _, video := range results {
+					year := time.Unix(video.UploadedAt, 0).Year()
+					counters[year]++
+				}
+				log.Println("background random search:", len(results), "found videos stored:")
+				for year, n := range counters {
+					log.Printf("%d videos from %d\n", n, year)
+				}
 			}
 			db.Put(conn)
 
