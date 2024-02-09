@@ -136,6 +136,7 @@ func (s *Router) RedirectRandom(w http.ResponseWriter, r *http.Request) {
 	// TO DO : if not row, select seen
 	if !row {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	var camID [16]byte

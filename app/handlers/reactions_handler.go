@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"zombiezen.com/go/sqlite"
 )
 
 type ReactionStats struct {
-	Cools   int64 `json:"cools"`
-	Trashes int64 `json:"trashes"`
+	Likes   int64 `json:"likes"`
+	Dislikes int64 `json:"dislikes"`
 }
 
 func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
@@ -19,61 +19,54 @@ func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	encoder := json.NewEncoder(w)
 
 	vars := mux.Vars(r)
+	camID, err := hex.DecodeString(vars["cam_id"])
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	visitor := r.Header.Get("visitor")
-	camID := vars["cam_id"]
 	reaction := vars["reaction"]
 
 	conn := s.db.Get(r.Context())
 	defer s.db.Put(conn)
 
 	stmt := conn.Prep(`
-		INSERT INTO reactions (cool, visitor_id, cam_id)
+		INSERT INTO reactions (like, visitor_id, cam_id)
 		VALUES(?, ?, ?)
 		ON CONFLICT (visitor_id, cam_id)
-		DO UPDATE SET cool=?
+		DO UPDATE SET like=?
 	`)
 
 	var reactionBool bool
-	if reaction == "cool" {
-		reactionBool = true
-	}
+	if reaction == "cool" { reactionBool = true }
 
 	stmt.BindBool(1, reactionBool)
 	stmt.BindText(2, visitor)
-	stmt.BindText(3, camID)
+	stmt.BindBytes(3, camID)
 	stmt.BindBool(4, reactionBool)
-	stmt.Step()
-	stmt.Reset()
+	stmt.BindBool(5, reactionBool)
 
-	stats, err := GetReaction(conn, camID)
+	stmt.Step(); stmt.ClearBindings(); stmt.Reset()
+
+	stmt = conn.Prep(`
+		SELECT
+			SUM(reactions.like = 1) like, SUM(reactions.like = 1) dislike
+		FROM reactions
+		WHERE reactions.cam_id = ?
+	`)
+
+	stmt.BindBytes(1, camID)
+	_, err = stmt.Step()
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
-		encoder.Encode(Message{"couldn't save reaction"})
 		return
 	}
-	encoder.Encode(stats)
-}
-
-func GetReaction(conn *sqlite.Conn, camID string) (Reactions, error) {
-	r := Reactions{}
-
-	stmt := conn.Prep(`
-			SELECT SUM(cool = 1) AS cools, SUM(cool = 0) AS trashes
-			FROM reactions
-			WHERE cam_id = ?
-	`)
-	stmt.BindText(1, camID)
-	_, err := stmt.Step()
-	if err != nil {
-		return r, err
+	response := ReactionStats{
+		Likes: stmt.GetInt64("likes"),
+		Dislikes: stmt.GetInt64("dislikes"),
 	}
+	stmt.Reset(); stmt.ClearBindings()
 
-	r.Cools = stmt.GetInt64("cools")
-	r.Trashes = stmt.GetInt64("trashes")
-
-	stmt.Reset()
-	stmt.ClearBindings()
-
-	return r, nil
+	encoder.Encode(response)
 }

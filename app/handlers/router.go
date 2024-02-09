@@ -25,20 +25,15 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	}
 
 	// api
-	router.PathPrefix("/api/cams/random").Methods("GET").HandlerFunc(router.GetRandom).HeadersRegexp("visitor", "[0-9]{10,20}")
-	router.PathPrefix("/api/cams/{cam_id}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
-	router.PathPrefix("/api/cams/{cams_id}").Methods("GET").HandlerFunc(router.GetCamera)
-
-	// pages
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 	router.PathPrefix("/rating").Methods("GET").HandlerFunc(router.GetRating)
-	router.PathPrefix("/").Methods("GET").HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			err := templates.ExecuteTemplate(w, "random.html", nil)
-			if err != nil {
-				log.Println(err.Error())
-			}
-		})
+	router.PathPrefix("/random").Methods("GET").HandlerFunc(router.RedirectRandom)
+
+	router.PathPrefix("/{cam_id}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
+	router.PathPrefix("/{cam_uuid}/stream").Methods("GET").HandlerFunc(router.GetCamStream)
+	router.PathPrefix("/{cam_uuid}").Methods("GET").HandlerFunc(router.GetCam)
+	router.PathPrefix("/").Methods("GET").HandlerFunc(router.RedirectRandom)
+	// serve static
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
 	router.Use(loggingMiddleware)
 

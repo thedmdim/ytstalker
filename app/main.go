@@ -31,6 +31,11 @@ func main() {
 	db.Put(conn)
 	log.Println("database ready")
 
+	// read country codes
+	countryCodes := make(map[string]string)
+	
+
+
 	// make router
 	handler := handlers.NewRouter(db)
 	server := &http.Server{

@@ -3,7 +3,7 @@ package main
 const CreateTablesIfNotExists = `
 	CREATE TABLE IF NOT EXISTS cams
 	(
-		id INTEGER PRIMARY KEY,
+		id BLOB PRIMARY KEY,
 		addr STRING,
 		adminka STRING,
 		stream STRING,
@@ -27,9 +27,9 @@ const CreateTablesIfNotExists = `
 
 	CREATE TABLE IF NOT EXISTS reactions
 	(
-		cool INTEGER,
+		like INTEGER,
 		visitor_id STRING,
-		cam_id INTEGER,
+		cam_id BLOB,
 		PRIMARY KEY (visitor_id, cam_id),
 		FOREIGN KEY (cam_id) REFERENCES videos (id) ON DELETE CASCADE,
 		FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE
