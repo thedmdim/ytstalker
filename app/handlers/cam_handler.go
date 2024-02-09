@@ -9,6 +9,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Cam struct {
+	ID           string
+	Addr         string
+	Adminka      string
+	Stream       string
+	Manufacturer string
+	Country      string
+	Likes        int64
+	Dislikes     int64
+}
+
 func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -93,7 +104,7 @@ func (s *Router) RedirectRandom(w http.ResponseWriter, r *http.Request) {
 			WHERE visitor_id = ?
 		)`
 
-	`params` := r.URL.Query()
+	params := r.URL.Query()
 	visitor := r.Header.Get("visitor")
 
 	manufacturer := params.Get("manufacturer")
