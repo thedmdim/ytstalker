@@ -32,8 +32,8 @@ func main() {
 	log.Println("database ready")
 
 	// read country codes
-	countryCodes := make(map[string]string)
-	
+	//countryCodes := make(map[string]string)
+
 
 
 	// make router

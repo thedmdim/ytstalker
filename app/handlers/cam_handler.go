@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -44,7 +45,7 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 			SUM(reactions.dislike = 0) AS dislikes
 		FROM cams
 		JOIN reactions ON reactions.cam_id = cams.id
-		WHERE cam_id = ?`)
+		WHERE cams.id = ?`)
 		
 	stmt.BindBytes(1, camID)
 	row, err := stmt.Step()
@@ -145,4 +146,42 @@ func (s *Router) RedirectRandom(w http.ResponseWriter, r *http.Request) {
 	stmt.Reset(); stmt.ClearBindings()
 	
     http.Redirect(w, r, fmt.Sprintf("/%x", camID), 301)
+}
+
+
+func (s *Router) ProxyStream(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	camID, err := hex.DecodeString(vars["cam_id"])
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	conn := s.db.Get(r.Context())
+	defer s.db.Put(conn)
+
+	stmt := conn.Prep("SELECT addr, stream FROM cams WHERE id = ?")
+	stmt.BindBytes(1, camID)
+
+	row, err := stmt.Step()
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
+	if !row {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	streamURL := "http://" + stmt.GetText("addr") + stmt.GetText("stream")
+
+	resp, err := http.Get(streamURL)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	io.Copy(w, resp.Body)
 }

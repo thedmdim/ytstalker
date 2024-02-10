@@ -28,9 +28,9 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	router.PathPrefix("/rating").Methods("GET").HandlerFunc(router.GetRating)
 	router.PathPrefix("/random").Methods("GET").HandlerFunc(router.RedirectRandom)
 
-	router.PathPrefix("/{cam_id}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
-	router.PathPrefix("/{cam_uuid}/stream").Methods("GET").HandlerFunc(router.GetCamStream)
-	router.PathPrefix("/{cam_uuid}").Methods("GET").HandlerFunc(router.GetCam)
+	router.PathPrefix("/{cam_id}/{reaction:(?:like|dislike)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
+	router.PathPrefix("/{cam_id}/stream").Methods("GET").HandlerFunc(router.ProxyStream)
+	router.PathPrefix("/{cam_id}").Methods("GET").HandlerFunc(router.GetCam)
 	router.PathPrefix("/").Methods("GET").HandlerFunc(router.RedirectRandom)
 	// serve static
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
