@@ -7,7 +7,7 @@ const CreateTablesIfNotExists = `
 		addr STRING,
 		adminka STRING,
 		stream STRING,
-		manufacturer STRING,
+		model STRING,
 		country STRING
 	);
 

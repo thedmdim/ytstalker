@@ -1,25 +1,24 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	"ytstalker/app/handlers"
-	"ytstalker/app/conf"
+	"camstalker/cmd/webapp/handlers"
 
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 func main() {
-	config := conf.ParseConfig()
-
 	// prepare db
-	db, err := sqlitex.NewPool(config.DSN, sqlitex.PoolOptions{PoolSize: config.DbPoolSize})
+	db, err := sqlitex.NewPool(os.Getenv("DSN"), sqlitex.PoolOptions{PoolSize: 100})
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}
@@ -32,9 +31,21 @@ func main() {
 	log.Println("database ready")
 
 	// read country codes
-	//countryCodes := make(map[string]string)
+	file, err := os.Open("countries.csv")
+    if err != nil {
+        log.Fatal("no countries.csv file")
+    }
+    defer file.Close()
 
-
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.TrimSpace(line)
+		columns := strings.Split(line, ",")
+		countryName := strings.ToLower(columns[0])
+		countryCode := strings.ToLower(columns[1])
+		handlers.CountryCodes[countryCode] = countryName
+	}
 
 	// make router
 	handler := handlers.NewRouter(db)

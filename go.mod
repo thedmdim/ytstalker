@@ -1,4 +1,4 @@
-module ytstalker
+module camstalker
 
 go 1.20
 

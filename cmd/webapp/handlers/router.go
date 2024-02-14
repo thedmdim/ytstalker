@@ -11,6 +11,7 @@ import (
 )
 
 var templates = template.Must(template.ParseGlob("web/*/*.html"))
+var CountryCodes = make(map[string]string)
 
 type Router struct {
 	mux.Router
@@ -32,6 +33,7 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	router.PathPrefix("/{cam_id}/stream").Methods("GET").HandlerFunc(router.ProxyStream)
 	router.PathPrefix("/{cam_id}").Methods("GET").HandlerFunc(router.GetCam)
 	router.PathPrefix("/").Methods("GET").HandlerFunc(router.RedirectRandom)
+
 	// serve static
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 

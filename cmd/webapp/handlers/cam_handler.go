@@ -15,7 +15,8 @@ type Cam struct {
 	Addr         string
 	Adminka      string
 	Stream       string
-	Manufacturer string
+	Video bool
+	Model string
 	Country      string
 	Likes        int64
 	Dislikes     int64
@@ -38,11 +39,11 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 			cams.id,
 			cams.addr,
 			cams.adminka,
-			cams.stream, 
-			cams.manufacturer, 
+			cams.stream,
+			cams.model, 
 			cams.country,
 			SUM(reactions.like = 1) AS likes,
-			SUM(reactions.dislike = 0) AS dislikes
+			SUM(reactions.like = 0) AS dislikes
 		FROM cams
 		JOIN reactions ON reactions.cam_id = cams.id
 		WHERE cams.id = ?`)
@@ -61,8 +62,9 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 		ID:           stmt.GetText("id"),
 		Addr:         stmt.GetText("addr"),
 		Adminka:      stmt.GetText("adminka"),
+		Video:        stmt.GetBool("video"),
 		Stream:       stmt.GetText("stream"),
-		Manufacturer: stmt.GetText("manufacturer"),
+		Model: stmt.GetText("model"),
 		Country:      stmt.GetText("country"),
 		Likes:        stmt.GetInt64("likes"),
 		Dislikes:     stmt.GetInt64("dislikes"),
@@ -108,8 +110,8 @@ func (s *Router) RedirectRandom(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	visitor := r.Header.Get("visitor")
 
-	manufacturer := params.Get("manufacturer")
-	if manufacturer != "" { query += " AND manufacturer = ?" }
+	model := params.Get("model")
+	if model != "" { query += " AND model = ?" }
 
 	country := params.Get("country")
 	if country != "" { query += " AND country = ?" }
@@ -120,11 +122,11 @@ func (s *Router) RedirectRandom(w http.ResponseWriter, r *http.Request) {
 	stmt := conn.Prep(query)
 	stmt.BindText(1, visitor)
 	
-	if manufacturer != "" && country != "" { 
-		stmt.BindText(2, manufacturer)
+	if model != "" && country != "" { 
+		stmt.BindText(2, model)
 		stmt.BindText(3, country)
-	} else if manufacturer != "" {
-		stmt.BindText(2, manufacturer)
+	} else if model != "" {
+		stmt.BindText(2, model)
 	} else if country != "" {
 		stmt.BindText(2, country)
 	}
