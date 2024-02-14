@@ -15,8 +15,7 @@ type Cam struct {
 	Addr         string
 	Adminka      string
 	Stream       string
-	Video bool
-	Model string
+	Model        string
 	Country      string
 	Likes        int64
 	Dislikes     int64
@@ -36,7 +35,6 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 
 	stmt := conn.Prep(`
 		SELECT
-			cams.id,
 			cams.addr,
 			cams.adminka,
 			cams.stream,
@@ -49,6 +47,7 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 		WHERE cams.id = ?`)
 		
 	stmt.BindBytes(1, camID)
+
 	row, err := stmt.Step()
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
@@ -58,19 +57,18 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+
 	cam := &Cam{
-		ID:           stmt.GetText("id"),
+		ID:           vars["cam_id"],
 		Addr:         stmt.GetText("addr"),
 		Adminka:      stmt.GetText("adminka"),
-		Video:        stmt.GetBool("video"),
 		Stream:       stmt.GetText("stream"),
-		Model: stmt.GetText("model"),
+		Model:        stmt.GetText("model"),
 		Country:      stmt.GetText("country"),
 		Likes:        stmt.GetInt64("likes"),
 		Dislikes:     stmt.GetInt64("dislikes"),
 	}
-	stmt.ClearBindings()
-	stmt.Reset()
+	stmt.ClearBindings(); stmt.Reset()
 
 	templates.ExecuteTemplate(w, "cam.html", cam)
 

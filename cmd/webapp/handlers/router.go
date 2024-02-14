@@ -10,7 +10,7 @@ import (
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
-var templates = template.Must(template.ParseGlob("web/*/*.html"))
+var templates = template.Must(template.ParseGlob("cmd/webapp/web/*/*.html"))
 var CountryCodes = make(map[string]string)
 
 type Router struct {
@@ -29,13 +29,14 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	router.PathPrefix("/rating").Methods("GET").HandlerFunc(router.GetRating)
 	router.PathPrefix("/random").Methods("GET").HandlerFunc(router.RedirectRandom)
 
+	// serve static
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("cmd/webapp/web/static"))))
+
 	router.PathPrefix("/{cam_id}/{reaction:(?:like|dislike)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
 	router.PathPrefix("/{cam_id}/stream").Methods("GET").HandlerFunc(router.ProxyStream)
 	router.PathPrefix("/{cam_id}").Methods("GET").HandlerFunc(router.GetCam)
 	router.PathPrefix("/").Methods("GET").HandlerFunc(router.RedirectRandom)
-
-	// serve static
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+	
 
 	router.Use(loggingMiddleware)
 
