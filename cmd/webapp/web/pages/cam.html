@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ template "head" }}
+        <link rel="stylesheet" type="text/css" href="/static/css/random.css">
+        
+        <script src="/static/js/random.js" defer></script>
+        <script src="/static/js/reactions.js" defer></script>
+
+        <title>ytstalker | Random YouTube videos search</title>
+    </head>
+    <body>
+        {{ template "header" }}
+        <div id="content">
+            <video src="{{ .ID }}/{{ .Stream }}" controls>
+                Your browser does not support the <code>video</code> element.
+             </video>
+            <div id="reactions">
+                <button id="cool">Like {{ .Likes }}</button>
+                <button id="link">Copy link</button>
+                <button id="trash">Dislike {{ .Dislikes }}</button>
+            </div>
+            <div id="video-info"></div>
+
+            <button id="random">Find Random Video</button>
+
+            <fieldset>
+                <legend>Search Settings</legend>
+
+                <p>Views</p>
+                <div class="sliders" id="views-slider"></div>
+                <p>Uploaded in</p>
+                <div class="sliders" id="years-slider"></div>
+            
+                <p>
+                    <input id="horizonly" type="checkbox" />
+                    <label for="horizonly">Exclude Vertical</label>
+                </p>
+                <p>
+                    <input id="musiconly" type="checkbox" />
+                    <label for="musiconly">Only Music</label>
+                </p>
+            </fieldset>
+            
+        </div>
+        {{ template "footer" }}
+    </body>
+    
+</html>
