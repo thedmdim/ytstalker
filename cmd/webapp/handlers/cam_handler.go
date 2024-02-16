@@ -179,8 +179,6 @@ func (s *Router) ProxyStream(w http.ResponseWriter, r *http.Request) {
 
 	stmt.ClearBindings(); stmt.Reset()
 	s.db.Put(conn)
-
-	go func(){
-		log.Println("stop streaming:", streamManager.Stream(streamURL, w))
-	}()
+	
+	go log.Println("stop streaming:", streamManager.Stream(streamURL, w))
 }
