@@ -23,6 +23,7 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	router := &Router{
 		Router: *mux.NewRouter(),
 		db:     db,
+		
 	}
 
 	// api

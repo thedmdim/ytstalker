@@ -51,6 +51,7 @@ func main() {
 	handler := handlers.NewRouter(db)
 	server := &http.Server{
 		Handler: handler,
+		Addr: ":8082",
 	}
 
 	// serve 80

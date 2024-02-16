@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
+	"log"
 	"net/http"
+	"camstalker/cmd/webapp/utils"
 
 	"github.com/gorilla/mux"
 )
+
+var streamManager = utils.NewStreamManager()
 
 type Cam struct {
 	ID           string
@@ -43,7 +46,7 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 			SUM(reactions.like = 1) AS likes,
 			SUM(reactions.like = 0) AS dislikes
 		FROM cams
-		JOIN reactions ON reactions.cam_id = cams.id
+		LEFT JOIN reactions ON reactions.cam_id = cams.id
 		WHERE cams.id = ?`)
 		
 	stmt.BindBytes(1, camID)
@@ -83,7 +86,7 @@ func (s *Router) GetCam(w http.ResponseWriter, r *http.Request) {
 	stmt.BindText(1, visitor)
 	stmt.Step(); stmt.ClearBindings(); stmt.Reset()
 
-	stmt = conn.Prep(`INSERT INTO videos_visitors (visitor_id, cam_id) VALUES (?, ?);`)
+	stmt = conn.Prep(`INSERT INTO cams_visitors (visitor_id, cam_id) VALUES (?, ?);`)
 	stmt.BindText(1, visitor)
 	stmt.BindBytes(2, camID)
 	stmt.Step(); stmt.ClearBindings(); stmt.Reset()
@@ -145,9 +148,8 @@ func (s *Router) RedirectRandom(w http.ResponseWriter, r *http.Request) {
 
 	stmt.Reset(); stmt.ClearBindings()
 	
-    http.Redirect(w, r, fmt.Sprintf("/%x", camID), 301)
+    http.Redirect(w, r, fmt.Sprintf("/%x", camID), http.StatusMovedPermanently)
 }
-
 
 func (s *Router) ProxyStream(w http.ResponseWriter, r *http.Request) {
 
@@ -159,7 +161,6 @@ func (s *Router) ProxyStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn := s.db.Get(r.Context())
-	defer s.db.Put(conn)
 
 	stmt := conn.Prep("SELECT addr, stream FROM cams WHERE id = ?")
 	stmt.BindBytes(1, camID)
@@ -176,12 +177,10 @@ func (s *Router) ProxyStream(w http.ResponseWriter, r *http.Request) {
 
 	streamURL := "http://" + stmt.GetText("addr") + stmt.GetText("stream")
 
-	resp, err := http.Get(streamURL)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
+	stmt.ClearBindings(); stmt.Reset()
+	s.db.Put(conn)
 
-	io.Copy(w, resp.Body)
+	go func(){
+		log.Println("stop streaming:", streamManager.Stream(streamURL, w))
+	}()
 }
