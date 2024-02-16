@@ -1,14 +1,13 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"io"
-	"log"
 	"net/http"
 	"sync"
 )
 
-var ErrNoClientLeft = fmt.Errorf("no clients left")
+var ErrNoClientLeft = errors.New("no clients left")
 
 type Stream struct {
 	io.Reader
@@ -30,7 +29,6 @@ func (sc *StreamClients) Write(p []byte) (int, error) {
 		_, err := client.Write(p)
 		if err != nil {
 			sc.Remove(client)
-			log.Println("StreamClients.Write:", err)
 		}
 	}
 	return len(p), nil
