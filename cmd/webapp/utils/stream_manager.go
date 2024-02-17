@@ -1,92 +1,122 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
+	"regexp"
 	"io"
 	"net/http"
 	"sync"
 )
 
+var boundaryRe = regexp.MustCompile(`boundary="([^"]+)"`)
 var ErrNoClientLeft = errors.New("no clients left")
 
-type Stream struct {
-	io.Reader
+type stream struct {
+	so io.Reader
 	headers http.Header
-	clients *StreamClients
-}
-
-type StreamClients struct {
-	sync.Mutex
-	c map[http.ResponseWriter]bool
+	boundary string
+	mu sync.Mutex
+	clients map[http.ResponseWriter]bool
+	wg sync.WaitGroup
 }
 
 // broadcast stream to clients
-func (sc *StreamClients) Write(p []byte) (int, error) {
-	if len(sc.c) == 0 {
+func (s *stream) Write(p []byte) (int, error) {
+	if len(s.clients) == 0 {
 		return 0, ErrNoClientLeft
 	}
-	for client := range sc.c {
+	for client, trimmed := range s.clients {
+		if !trimmed {
+			index := bytes.Index(p, []byte("--" + s.boundary))
+			if index != -1 {
+				p = p[index:]
+			}
+			s.setTrimmed(client)
+		}
+
 		_, err := client.Write(p)
 		if err != nil {
-			sc.Remove(client)
+			s.del(client)
 		}
 	}
 	return len(p), nil
 }
 
-func (sc *StreamClients) Add(client http.ResponseWriter) {
-	sc.Lock()
-	sc.c[client] = true
-	sc.Unlock()
+func (s *stream) addClient(client http.ResponseWriter) {
+	s.mu.Lock()
+	s.clients[client] = false
+	s.mu.Unlock()
 }
 
-func (sc *StreamClients) Remove(client http.ResponseWriter) {
-	sc.Lock()
-	delete(sc.c, client)
-	sc.Unlock()
+func (s *stream) del(client http.ResponseWriter) {
+	s.mu.Lock()
+	delete(s.clients, client)
+	s.mu.Unlock()
+}
+
+func (s *stream) setTrimmed(client http.ResponseWriter) {
+	s.mu.Lock()
+	s.clients[client] = true
+	s.mu.Unlock()
 }
 
 func NewStreamManager() *StreamManager {
 	sm := &StreamManager{}
-	sm.streams = make(map[string]*Stream)
+	sm.streams = make(map[string]*stream)
 	return sm
 }
 
 type StreamManager struct {
 	sync.Mutex
-	streams map[string]*Stream
+	streams map[string]*stream
 }
 
 func (sm *StreamManager) Stream(url string, client http.ResponseWriter) error {
-	stream := sm.streams[url]
-	if stream == nil {
+
+	var err error
+
+	st, ok := sm.streams[url]
+	if !ok {
 		resp, err := http.Get(url)
 		if err != nil {
 			client.WriteHeader(http.StatusInternalServerError)
 			return err
 		}
-		stream = &Stream{
-			Reader: resp.Body,
+
+		st = &stream{
+			so: resp.Body,
 			headers: resp.Header,
-			clients: &StreamClients{
-				c: make(map[http.ResponseWriter]bool),
-			},
+			clients: make(map[http.ResponseWriter]bool),
+		}
+
+		match := boundaryRe.FindStringSubmatch(resp.Header.Get("content-type"))
+		if len(match) > 1 {
+			st.boundary = match[1]
 		}
 
 		sm.Lock()
-		sm.streams[url] = stream
+		sm.streams[url] = st
 		sm.Unlock()
 	}
 
 	// write headers
-	for name, values := range stream.headers {
+	for name, values := range st.headers {
 		for _, value := range values {
 			client.Header().Set(name, value)
 		}
 	}
 
-	stream.clients.Add(client)
+	st.addClient(client)
 
-	_, err := io.Copy(stream.clients, stream)
+	if !ok {
+		st.wg.Add(1)
+		_, err = io.Copy(st, st.so)
+		st.wg.Done()
+	}
+
+	// wait until stream wokring
+	st.wg.Wait()
+
 	return err
 }

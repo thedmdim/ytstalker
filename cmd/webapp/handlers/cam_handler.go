@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"net/http"
 	"camstalker/cmd/webapp/utils"
 
@@ -180,5 +179,5 @@ func (s *Router) ProxyStream(w http.ResponseWriter, r *http.Request) {
 	stmt.ClearBindings(); stmt.Reset()
 	s.db.Put(conn)
 	
-	go log.Println("stop streaming:", streamManager.Stream(streamURL, w))
+	streamManager.Stream(streamURL, w)
 }
