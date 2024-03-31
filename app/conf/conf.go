@@ -14,8 +14,6 @@ type Config struct {
 }
 
 func ParseConfig() *Config {
-	// parse config
-
 	config := &Config{}
 
 	config.DSN = os.Getenv("DSN")
