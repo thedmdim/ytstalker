@@ -91,6 +91,8 @@ function ShowVideo(data) {
     const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
     const year = date.getFullYear();
     document.getElementById("video-info").textContent = `${day}.${month}.${year} | ${data.video.views} views`
+
+    document.getElementsByTagName("title")[0].textContent = `ytstalker | ${data.video.views} - ${year}`
     
     let cool = document.getElementById("cool");
     let trash = document.getElementById("trash");
