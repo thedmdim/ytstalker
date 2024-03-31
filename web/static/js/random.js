@@ -92,7 +92,7 @@ function ShowVideo(data) {
     const year = date.getFullYear();
     document.getElementById("video-info").textContent = `${day}.${month}.${year} | ${data.video.views} views`
 
-    document.getElementsByTagName("title")[0].textContent = `ytstalker | ${data.video.views} - ${year}`
+    document.getElementsByTagName("title")[0].textContent = `ytstalker | ${data.video.title} - ${year}`
     
     let cool = document.getElementById("cool");
     let trash = document.getElementById("trash");
