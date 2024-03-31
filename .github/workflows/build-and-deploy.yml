@@ -49,7 +49,7 @@ jobs:
 
       - name: SSH into the server and update the code
         run: |
-          ssh $SERVER_USERNAME@$SERVER_IP 'docker compose -f /root/ytstalker/docker-compose.yml up --pull always -d app'
+          ssh $SERVER_USERNAME@$SERVER_IP 'docker compose -f /root/beget-compose/docker-compose.yml up --pull always -d ytstalker'
         env:
           SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
           SERVER_IP: ${{ secrets.SERVER_IP }}

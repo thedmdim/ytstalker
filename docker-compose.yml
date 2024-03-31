@@ -5,7 +5,7 @@ networks:
     driver: bridge
 
 services:
-  app:
+  ytstalker:
     image: ghcr.io/thedmdim/ytstalker
     restart: always
     labels:
@@ -14,11 +14,10 @@ services:
       - traefik.http.routers.ytstalker.entrypoints=websecure
       - traefik.http.routers.ytstalker.tls.certresolver=letsencrypt
     volumes:
-      - ./db:/usr/bin/ytstalker/db
+      - .:/usr/bin/ytstalker/db
     environment:
       DSN: db/${DSN:-server.db}
       YT_API_KEY: ${YT_API_KEY}
-
     networks:
       - app
 
