@@ -6,50 +6,27 @@ networks:
 
 services:
   ytstalker:
+    container_name: ytstalker
     image: ghcr.io/thedmdim/ytstalker
     restart: always
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.ytstalker.rule=Host(`ytstalker.fun`)
-      - traefik.http.routers.ytstalker.entrypoints=websecure
-      - traefik.http.routers.ytstalker.tls.certresolver=letsencrypt
     volumes:
       - .:/usr/bin/ytstalker/db
     environment:
-      DSN: db/${DSN:-server.db}
+      DSN: db/${DSN}
       YT_API_KEY: ${YT_API_KEY}
     networks:
       - app
 
-  traefik:
-    image: docker.io/traefik
+  caddy:
+    container_name: caddy
+    image: caddy
     restart: always
-    command:
-      - --api.insecure=false
-      - --api.dashboard=false
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --global.sendAnonymousUsage=false
-
-      # entrypoints
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-
-      # redirect http to https
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      
-      # let's encrypt resolver
-      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.email=thedmdim@gmail.com
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     ports:
-      - 80:80
-      - 443:443
-    labels: 
-      traefik.enable: "true"
+      - '80:80'
+      - '443:443'
     volumes:
-      - ./letsencrypt:/letsencrypt:rw
-      - /run/docker.sock:/var/run/docker.sock:ro
+      - ./caddy-config:/config
+      - ./caddy-data:/data
+      - ./Caddyfile:/etc/caddy/Caddyfile
     networks:
       - app

@@ -1,0 +1,4 @@
+ytstalker.fun {
+  reverse_proxy ytstalker:80
+  tls thedmdim@gmail.com
+}
