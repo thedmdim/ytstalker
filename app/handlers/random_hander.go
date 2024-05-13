@@ -91,7 +91,7 @@ func (sc *SearchCriteria) MakeWhere() string {
 		conditions = append(conditions, fmt.Sprintf("uploaded >= %d", timestamp))
 	}
 	if year, err := strconv.Atoi(sc.YearsTo); err == nil {
-		timestamp := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()
+		timestamp := time.Date(year, time.December, 31, 0, 0, 0, 0, time.UTC).Unix()
 		conditions = append(conditions, fmt.Sprintf("uploaded <= %d", timestamp))
 	}
 	if sc.Horizonly {
