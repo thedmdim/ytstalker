@@ -119,7 +119,7 @@ func (sc *SearchCriteria) CheckVideo(video *Video) bool {
 		}
 	}
 	if yearTo, err := strconv.Atoi(sc.YearsTo); err == nil {
-		if video.UploadedAt > time.Date(yearTo, time.January, 1, 0, 0, 0, 0, time.UTC).Unix() {
+		if video.UploadedAt > time.Date(yearTo, time.December, 31, 0, 0, 0, 0, time.UTC).Unix() {
 			return false
 		}
 	}
