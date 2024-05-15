@@ -10,19 +10,21 @@ import (
 	"syscall"
 	"time"
 
-	"ytstalker/app/conf"
-	"ytstalker/app/handlers"
-	"ytstalker/app/youtube"
+	"ytstalker/cmd/app/handlers"
+	"ytstalker/cmd/app/youtube"
 
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 func main() {
-	config := conf.ParseConfig()
-
 	// prepare db
-	db, err := sqlitex.NewPool(config.DSN, sqlitex.PoolOptions{PoolSize: config.DbPoolSize})
+	dsn := os.Getenv("DSN")
+	if dsn == "" {
+		dsn = "server.db"
+	}
+	
+	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 100})
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}
@@ -35,7 +37,11 @@ func main() {
 	log.Println("database ready")
 
 	// init youtube api requester
-	ytr := youtube.NewYouTubeRequester(config)
+	ytApiKey := os.Getenv("YT_API_KEY")
+	if ytApiKey == "" {
+		log.Fatal("You forgot to provide YouTube API key!")
+	}
+	ytr := youtube.NewYouTubeRequester(ytApiKey)
 
 	// make router
 	handler := handlers.NewRouter(db)

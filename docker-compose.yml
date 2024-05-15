@@ -5,9 +5,20 @@ networks:
     driver: bridge
 
 services:
-  ytstalker:
-    container_name: ytstalker
-    image: ghcr.io/thedmdim/ytstalker
+
+  tele:
+    container_name: tele
+    image: ghcr.io/thedmdim/ytstalker/tele
+    restart: always
+    volumes:
+      - .:/usr/bin/ytstalker/db
+    environment:
+      DSN: db/${DSN}
+      TG_TOKEN: ${TG_TOKEN}
+
+  app:
+    container_name: app
+    image: ghcr.io/thedmdim/ytstalker/app
     restart: always
     volumes:
       - .:/usr/bin/ytstalker/db

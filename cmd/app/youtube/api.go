@@ -6,20 +6,18 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"ytstalker/app/conf"
 )
 
 type YouTubeRequester struct {
 	noRedirectClient *http.Client
-	conf             *conf.Config
+	token             string
 	baseUrl          string
 }
 
-func NewYouTubeRequester(conf *conf.Config) *YouTubeRequester {
+func NewYouTubeRequester(token string) *YouTubeRequester {
 	return &YouTubeRequester{
 		baseUrl: "https://www.googleapis.com/youtube/v3",
-		conf:    conf,
+		token:    token,
 		noRedirectClient: &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
