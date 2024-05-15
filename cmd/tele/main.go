@@ -157,7 +157,6 @@ func main() {
 
 var ErrNoSession = errors.New("no session found")
 
-
 func GetKeyboard(year int) echotron.InlineKeyboardMarkup {
 
 	firstRow := make([]echotron.InlineKeyboardButton, 0, 3)
