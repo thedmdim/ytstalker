@@ -10,11 +10,11 @@ import (
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
-var templates = template.Must(template.ParseGlob("web/*/*.html"))
+var Templates *template.Template
 
 type Router struct {
 	mux.Router
-	db  *sqlitex.Pool
+	db *sqlitex.Pool
 }
 
 func NewRouter(db *sqlitex.Pool) *Router {
@@ -34,7 +34,7 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	router.PathPrefix("/rating").Methods("GET").HandlerFunc(router.GetRating)
 	router.PathPrefix("/").Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			err := templates.ExecuteTemplate(w, "random.html", nil)
+			err := Templates.ExecuteTemplate(w, "random.html", nil)
 			if err != nil {
 				log.Println(err.Error())
 			}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +19,8 @@ import (
 )
 
 func main() {
+	handlers.Templates = template.Must(template.ParseGlob("web/*/*.html"))
+
 	// prepare db
 	dsn := os.Getenv("DSN")
 	if dsn == "" {

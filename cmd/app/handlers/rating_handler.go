@@ -9,13 +9,13 @@ import (
 )
 
 type Rating struct {
-	Best []*RatedVideo
+	Best  []*RatedVideo
 	Worst []*RatedVideo
 }
 
 type RatedVideo struct {
-	ID string
-	Title string
+	ID        string
+	Title     string
 	Reactions int64
 }
 
@@ -39,7 +39,7 @@ func (s *Router) GetRating(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates.ExecuteTemplate(w, "rating.html", rating)
+	Templates.ExecuteTemplate(w, "rating.html", rating)
 
 }
 
@@ -71,13 +71,15 @@ func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo,
 
 		if row {
 			ratedVideo := &RatedVideo{
-				ID: stmt.GetText("video_id"),
-				Title: stmt.GetText("title"),
+				ID:        stmt.GetText("video_id"),
+				Title:     stmt.GetText("title"),
 				Reactions: stmt.GetInt64("reactions_sum"),
 			}
 			result = append(result, ratedVideo)
 
-		} else { break }
+		} else {
+			break
+		}
 	}
 
 	if err := stmt.Reset(); err != nil {

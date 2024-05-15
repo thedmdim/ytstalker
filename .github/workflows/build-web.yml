@@ -50,7 +50,10 @@ jobs:
 
       - name: SSH into the server and update the code
         run: |
-          ssh $SERVER_USERNAME@$SERVER_IP "wget -qO - https://raw.githubusercontent.com/thedmdim/ytstalker/master/docker-compose.yml > /root/ytstalker/docker-compose.yml && docker compose -f /root/ytstalker/docker-compose.yml up --pull always -d app caddy"
+          ssh $SERVER_USERNAME@$SERVER_IP \
+          "wget -qO - https://raw.githubusercontent.com/thedmdim/ytstalker/master/docker-compose.yml > /root/ytstalker/docker-compose.yml
+          && wget -qO - https://raw.githubusercontent.com/thedmdim/ytstalker/master/Caddyfile > /root/ytstalker/Caddyfile
+          && docker compose -f /root/ytstalker/docker-compose.yml up --pull always -d app caddy"
         env:
           SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
           SERVER_IP: ${{ secrets.SERVER_IP }}

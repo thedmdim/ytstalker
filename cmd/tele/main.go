@@ -167,7 +167,6 @@ func GetKeyboard(year int) echotron.InlineKeyboardMarkup {
 		firstRow = append(firstRow, echotron.InlineKeyboardButton{Text: "<-", CallbackData: "/set" + strconv.Itoa(year-1)})
 	}
 
-
 	firstRow = append(firstRow, echotron.InlineKeyboardButton{Text: strconv.Itoa(year), CallbackData: "/noaction" + strconv.Itoa(year)})
 
 	if year >= time.Now().Year() {
