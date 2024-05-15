@@ -47,6 +47,7 @@ func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
+	
 	res.Reactions, _ = GetReaction(conn, res.Video.ID)
 	encoder.Encode(res)
 }

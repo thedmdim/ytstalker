@@ -61,7 +61,6 @@ func main() {
 				continue
 			}
 
-
 			text := "Title: " + video.Title + "\n" +
 					"Views: " + strconv.FormatInt(video.Views, 10) + "\n" +
 					"Uploaded: " + time.Unix(video.UploadedAt, 0).Format("02.01.2006") + "\n" +
