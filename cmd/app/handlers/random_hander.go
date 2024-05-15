@@ -51,7 +51,6 @@ type SearchCriteria struct {
 var ErrNoVideoFound = errors.New("no video found")
 
 func ParseQueryParams(params url.Values) *SearchCriteria {
-
 	sc := &SearchCriteria{}
 
 	viewsValues := strings.Split(params.Get("views"), "-")
