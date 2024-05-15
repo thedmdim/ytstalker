@@ -103,7 +103,6 @@ func main() {
 		log.Fatalln("error gracefully closing db:", err.Error())
 	}
 	log.Println("successfully closed db", "\n", "thanks :)")
-
 }
 
 
