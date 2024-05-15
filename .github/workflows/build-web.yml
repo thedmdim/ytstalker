@@ -25,7 +25,7 @@ jobs:
       
       - uses: docker/build-push-action@v5
         with:
-          context: .
+          file: Dockerfile.app
           push: true
           tags: ghcr.io/thedmdim/ytstalker/app:latest
           cache-from: type=gha
