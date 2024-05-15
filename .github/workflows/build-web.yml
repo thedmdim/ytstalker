@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - master
-    paths-ignore:
-      - README.md
+    paths:
+      - 'cmd/app/**'
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,12 +27,12 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/thedmdim/ytstalker:latest
+          tags: ghcr.io/thedmdim/ytstalker/app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: publish
+    needs: build
     name: deploy image
     runs-on: ubuntu-latest
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: SSH into the server and update the code
         run: |
-          ssh $SERVER_USERNAME@$SERVER_IP "wget -qO - https://raw.githubusercontent.com/thedmdim/ytstalker/master/docker-compose.yml > /root/ytstalker/docker-compose.yml && docker compose -f /root/ytstalker/docker-compose.yml up --pull always -d ytstalker"
+          ssh $SERVER_USERNAME@$SERVER_IP "wget -qO - https://raw.githubusercontent.com/thedmdim/ytstalker/master/docker-compose.yml > /root/ytstalker/docker-compose.yml && docker compose -f /root/ytstalker/docker-compose.yml up --pull always -d app"
         env:
           SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
           SERVER_IP: ${{ secrets.SERVER_IP }}

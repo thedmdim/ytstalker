@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -46,6 +47,8 @@ type SearchCriteria struct {
 	Horizonly bool
 	Musiconly bool
 }
+
+var ErrNoVideoFound = errors.New("no video found")
 
 func ParseQueryParams(params url.Values) *SearchCriteria {
 
@@ -132,11 +135,18 @@ func (sc *SearchCriteria) CheckVideo(video *Video) bool {
 	return true
 }
 
-func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor string) (*Video, error) {
+func TakeFirstUnseen(conn *sqlite.Conn, visitor string, sc *SearchCriteria) (*Video, error) {
 
 	video := &Video{}
 
-	stmt, _, err := conn.PrepareTransient(fmt.Sprintf(`
+	var where string
+	if sc != nil {
+		where = sc.MakeWhere()
+	}
+
+	visitor = strings.ReplaceAll(visitor, " ", "")
+
+	stmt, err := conn.Prepare(fmt.Sprintf(`
 		SELECT id, uploaded, title, views, vertical, category
 		FROM videos
 		WHERE id NOT IN (
@@ -147,7 +157,7 @@ func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 		ORDER BY random()
 		LIMIT 1`,
 		visitor,
-		sc.MakeWhere(),
+		where,
 	))
 	if err != nil {
 		return nil, fmt.Errorf("error preparing query: %w", err)
@@ -157,7 +167,7 @@ func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 		return nil, err
 	}
 	if !rows {
-		return nil, nil
+		return nil, ErrNoVideoFound
 	}
 
 	video.ID = stmt.GetText("id")
@@ -175,7 +185,7 @@ func (s *Router) TakeFirstUnseen(conn *sqlite.Conn, sc *SearchCriteria, visitor 
 	return video, nil
 }
 
-func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId string) error {
+func RememberSeen(conn *sqlite.Conn, visitorId string, videoId string) error {
 
 	endFn, err := sqlitex.ImmediateTransaction(conn)
 	if err != nil {
@@ -193,8 +203,9 @@ func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 	if _, err = stmt.Step(); err != nil {
 		return err
 	}
+	stmt.ClearBindings(); stmt.Reset()
 
-	stmt, err = conn.Prepare(`INSERT INTO videos_visitors (visitor_id, video_id) VALUES (?, ?);`)
+	stmt = conn.Prep(`INSERT INTO videos_visitors (visitor_id, video_id) VALUES (?, ?);`)
 	if err != nil {
 		return fmt.Errorf("error preparing query: %w", err)
 	}
@@ -203,10 +214,7 @@ func (s *Router) RememberSeen(conn *sqlite.Conn, visitorId string, videoId strin
 	if _, err = stmt.Step(); err != nil {
 		return err
 	}
-	err = stmt.Reset()
-	if err != nil {
-		return err
-	}
+	stmt.ClearBindings(); stmt.Reset()
 
 	return nil
 }
@@ -223,7 +231,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 	defer s.db.Put(conn)
 
 	searchCriteria := ParseQueryParams(params)
-	video, err := s.TakeFirstUnseen(conn, searchCriteria, visitor)
+	video, err := TakeFirstUnseen(conn, visitor, searchCriteria)
 	if err != nil {
 		log.Println("take first unseen failed:", err.Error())
 	}
@@ -240,7 +248,7 @@ func (s *Router) GetRandom(w http.ResponseWriter, r *http.Request) {
 		response.Reactions = reactions
 
 		encoder.Encode(response)
-		err = s.RememberSeen(conn, visitor, video.ID)
+		err = RememberSeen(conn, visitor, video.ID)
 		if err != nil {
 			log.Println("error remembering seen:", err.Error())
 		}

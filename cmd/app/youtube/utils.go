@@ -27,7 +27,7 @@ type Video struct {
 func (y *YouTubeRequester) Request(req *http.Request) (*http.Response, error) {
 
 	q := req.URL.Query()
-	q.Add("key", y.conf.YtApiKey)
+	q.Add("key", y.token)
 	req.URL.RawQuery = q.Encode()
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
