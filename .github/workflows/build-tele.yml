@@ -25,7 +25,6 @@ jobs:
       
       - uses: docker/build-push-action@v5
         with:
-          context: .
           file: Dockerfile.tele
           push: true
           tags: ghcr.io/thedmdim/ytstalker/tele:latest
