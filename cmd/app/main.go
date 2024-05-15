@@ -19,6 +19,7 @@ import (
 )
 
 func main() {
+	
 	handlers.Templates = template.Must(template.ParseGlob("web/*/*.html"))
 
 	// prepare db
