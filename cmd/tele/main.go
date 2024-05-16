@@ -30,18 +30,23 @@ func main() {
 		log.Fatal("no dsn provided")
 	}
 	
-	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 100})
+	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 50})
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}
 
 	api := echotron.NewAPI(token)
+	res, err := api.GetMe()
+	if err != nil {
+		log.Fatal("cannot get my username", err)
+	}
+	me := res.Result.Username
+
 	for u := range echotron.PollingUpdates(token) {
 
 		visitor :=  strconv.FormatInt(u.ChatID(), 10)
-		
 
-		if u.Message != nil && u.Message.Text == "/start" {
+		if u.Message != nil && (u.Message.Text == "/start" || u.Message.Text == "/start@"+me ) {
 
 			sc := &handlers.SearchCriteria{
 				YearsFrom: strconv.Itoa(DefaultYear),
