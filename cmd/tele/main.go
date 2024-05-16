@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -15,12 +14,6 @@ import (
 	"github.com/NicoNex/echotron/v3"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
-
-type Session struct {
-	MessageID int
-	Text string
-	Year int
-}
 
 const YouTubeFounded = 2006
 
@@ -46,16 +39,18 @@ func main() {
 	for u := range echotron.PollingUpdates(token) {
 
 		visitor :=  strconv.FormatInt(u.ChatID(), 10)
+		
 
 		if u.Message != nil && u.Message.Text == "/start" {
 
-			conn := db.Get(context.Background())
 			sc := &handlers.SearchCriteria{
 				YearsFrom: strconv.Itoa(DefaultYear),
 				YearsTo: strconv.Itoa(DefaultYear),
 			}
+			conn := db.Get(context.Background())
 			video, err := handlers.TakeFirstUnseen(conn, visitor, sc)
 			db.Put(conn)
+			
 			if err != nil {
 				log.Println("cannot take video:", err)
 				continue
@@ -75,10 +70,13 @@ func main() {
 				continue
 			}
 
+			conn = db.Get(context.Background())
 			err = handlers.RememberSeen(conn, visitor, video.ID)
+			db.Put(conn)
 			if err != nil {
 				log.Println("cannot remember seen: ", err)
 			}
+			continue
 		}
 
 		if u.CallbackQuery != nil && strings.HasPrefix(u.CallbackQuery.Data, "/random") {
@@ -89,11 +87,12 @@ func main() {
 				continue
 			}
 
-			conn := db.Get(context.Background())
+			
 			sc := &handlers.SearchCriteria{
 				YearsFrom: strconv.Itoa(year),
 				YearsTo: strconv.Itoa(year),
 			}
+			conn := db.Get(context.Background())
 			video, err := handlers.TakeFirstUnseen(conn, visitor, sc)
 			db.Put(conn)
 			if err != nil {
@@ -121,11 +120,13 @@ func main() {
 				continue
 			}
 
+			conn = db.Get(context.Background())
 			err = handlers.RememberSeen(conn, visitor, video.ID)
+			db.Put(conn)
 			if err != nil {
 				log.Println("cannot remember seen: ", err)
 			}
-
+			continue
 		}
 
 
@@ -148,13 +149,11 @@ func main() {
 				fmt.Println("cannot set year:", err)
 				continue
 			}
-
+			continue
 		}
 		
 	}
 }
-
-var ErrNoSession = errors.New("no session found")
 
 func GetKeyboard(year int) echotron.InlineKeyboardMarkup {
 
