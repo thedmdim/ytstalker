@@ -39,18 +39,27 @@ func (s *Router) GetRating(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	rating.Total = TotalVideosNum(conn)
+	total, err := TotalVideosNum(conn)
+	if err != nil {
+		log.Println("GetTopRated:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	rating.Total = total
 
 	Templates.ExecuteTemplate(w, "rating.html", rating)
 
 }
 
-func TotalVideosNum(conn *sqlite.Conn) int64 {
+func TotalVideosNum(conn *sqlite.Conn) (int64, error) {
 	var total int64
 	stmt := conn.Prep(`SELECT COUNT(videos.id) total FROM videos`)
-	stmt.Step(); stmt.Reset()
+	
+	if _, err := stmt.Step(); err != nil {
+		return 0, fmt.Errorf("stmt.ClearBindings: %w", err)
+	}
 	total = stmt.GetInt64("total")
-	return total
+	return total, stmt.Reset()
 }
 
 func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo, error) {
