@@ -52,14 +52,12 @@ func (s *Router) GetRating(w http.ResponseWriter, r *http.Request) {
 }
 
 func TotalVideosNum(conn *sqlite.Conn) (int64, error) {
-	var total int64
 	stmt := conn.Prep(`SELECT COUNT(videos.id) total FROM videos`)
 	
 	if _, err := stmt.Step(); err != nil {
 		return 0, fmt.Errorf("stmt.ClearBindings: %w", err)
 	}
-	total = stmt.GetInt64("total")
-	return total, stmt.Reset()
+	return stmt.GetInt64("total"), stmt.Reset()
 }
 
 func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo, error) {
