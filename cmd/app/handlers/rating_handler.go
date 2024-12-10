@@ -48,6 +48,7 @@ func (s *Router) GetRating(w http.ResponseWriter, r *http.Request) {
 func TotalVideosNum(conn *sqlite.Conn) int64 {
 	var total int64
 	stmt := conn.Prep(`SELECT COUNT(videos.id) total FROM videos`)
+	stmt.Step()
 	total = stmt.GetInt64("total")
 	return total
 }
