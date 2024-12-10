@@ -9,6 +9,7 @@ import (
 )
 
 type Rating struct {
+	Total int64
 	Best  []*RatedVideo
 	Worst []*RatedVideo
 }
@@ -38,9 +39,17 @@ func (s *Router) GetRating(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	rating.Total = TotalVideosNum(conn)
 
 	Templates.ExecuteTemplate(w, "rating.html", rating)
 
+}
+
+func TotalVideosNum(conn *sqlite.Conn) int64 {
+	var total int64
+	stmt := conn.Prep(`SELECT COUNT(videos.id) total FROM videos`)
+	total = stmt.GetInt64("total")
+	return total
 }
 
 func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo, error) {
