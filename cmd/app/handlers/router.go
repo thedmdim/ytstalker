@@ -31,7 +31,7 @@ func NewRouter(db *sqlitex.Pool) *Router {
 
 	// pages
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
-	router.PathPrefix("/rating").Methods("GET").HandlerFunc(router.GetRating)
+	router.PathPrefix("/stats").Methods("GET").HandlerFunc(router.GetStats)
 	router.PathPrefix("/").Methods("GET").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			err := Templates.ExecuteTemplate(w, "random.html", nil)
