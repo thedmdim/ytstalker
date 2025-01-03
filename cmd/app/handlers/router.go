@@ -28,7 +28,6 @@ func NewRouter(db *sqlitex.Pool) *Router {
 	router.PathPrefix("/api/videos/random").Methods("GET").HandlerFunc(router.GetRandom).HeadersRegexp("visitor", "[0-9]{10,20}")
 	router.PathPrefix("/api/videos/{video_id}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(router.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
 	router.PathPrefix("/api/videos/{video_id}").Methods("GET").HandlerFunc(router.GetVideo)
-
 	// pages
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 	router.PathPrefix("/stats").Methods("GET").HandlerFunc(router.GetStats)
