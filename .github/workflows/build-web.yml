@@ -6,7 +6,7 @@ on:
       - master
     paths:
       - 'cmd/app/**'
-      - 'cmd/web/**'
+      - 'web/**'
 
 jobs:
   build:
