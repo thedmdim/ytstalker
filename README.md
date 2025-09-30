@@ -4,7 +4,7 @@
 
 *A lot of wonderful, beautiful or even mysterious videos remain unseen.*
 
-*Now you can just open [ytstalker.fun](https://ytstalker.mov)*
+*Now you can just open [ytstalker.mov](https://ytstalker.mov)*
 
 # donate
 
