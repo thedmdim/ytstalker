@@ -13,15 +13,14 @@ type ReactionStats struct {
 	Trashes int64 `json:"trashes"`
 }
 
-func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
+
+func (s *Handlers) WriteReaction(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
-	encoder := json.NewEncoder(w)
 
 	vars := mux.Vars(r)
-
-	visitor := r.Header.Get("visitor")
 	videoID := vars["video_id"]
+	visitor := vars["visitor"]
 	reaction := vars["reaction"]
 
 	conn := s.db.Get(r.Context())
@@ -49,10 +48,9 @@ func (s *Router) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	stats, err := GetReaction(conn, videoID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
-		encoder.Encode(Message{"couldn't save reaction"})
 		return
 	}
-	encoder.Encode(stats)
+	json.NewEncoder(w).Encode(stats)
 }
 
 func GetReaction(conn *sqlite.Conn, videoID string) (Reactions, error) {

@@ -1,53 +1,118 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"zombiezen.com/go/sqlite"
 )
 
-func (s *Router) GetVideo(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	encoder := json.NewEncoder(w)
 
+func (s Handlers) GetVideoPage(w http.ResponseWriter, r *http.Request) {
+	err := s.templates.ExecuteTemplate(w, "video.html", nil)
+	if err != nil {
+		log.Println(err.Error())
+	}
+}
+
+func (h Handlers) GetVideoData(w http.ResponseWriter, r *http.Request) {
+
+	r.Body.Close()
+
+	params := r.URL.Query()
+	visitor := params.Get("visitor")
+	if visitor == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	conn := h.db.Get(context.Background())
+	defer h.db.Put(conn)
+
+	// bind params
 	vars := mux.Vars(r)
+	videoID := vars["video_id"]
 
-	conn := s.db.Get(r.Context())
-	defer s.db.Put(conn)
+	var query string
+	var stmt *sqlite.Stmt
 
-	res := &VideoWithReactions{}
-
-	stmt := conn.Prep(`
-		SELECT id, uploaded, title, views, vertical, category
+	query = `
+		SELECT
+			videos.id,
+			videos.uploaded,
+			videos.title,
+			videos.views,
+			videos.vertical,
+			videos.category,
+			SUM(cool = 1) AS cools,
+			SUM(cool = 0) AS trashes
 		FROM videos
-		WHERE id = ?`)
-
-	stmt.BindText(1, vars["video_id"])
+		LEFT JOIN reactions ON reactions.video_id = videos.id
+		WHERE videos.id = ?
+	`
+	stmt = conn.Prep(query)
+	stmt.BindText(1, videoID)
+	
 	row, err := stmt.Step()
 	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !row {
 		w.WriteHeader(http.StatusNotFound)
-		encoder.Encode(Message{"couldn't find video"})
 		return
 	}
-	res.Video = &Video{
-		ID:         stmt.GetText("id"),
-		UploadedAt: stmt.GetInt64("uploaded"),
-		Title:      stmt.GetText("title"),
-		Views:      stmt.GetInt64("views"),
-		Vertical:   stmt.GetBool("vertical"),
-		Category:   stmt.GetInt64("category"),
+
+	response := VideoWithReactions{
+		Video: Video{
+			ID: stmt.GetText("id"),
+			UploadedAt: stmt.GetInt64("uploaded"),
+			Title: stmt.GetText("title"),
+			Views: stmt.GetInt64("views"),
+			Vertical: stmt.GetBool("vertical"),
+			Category: stmt.GetInt64("category"),
+		},
+		Reactions: Reactions{
+			Cools: stmt.GetInt64("cools"),
+			Trashes: stmt.GetInt64("trashes"),
+		},
 	}
-	err = stmt.Reset()
-	if err != nil {
-		w.WriteHeader(http.StatusBadGateway)
+
+	stmt.ClearBindings(); stmt.Reset()
+
+	// w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil { log.Println(err) }
+
+	// remember seen
+	stmt = conn.Prep(`
+		INSERT INTO visitors (id, last_seen)
+		VALUES(?, unixepoch())
+		ON CONFLICT (id)
+		DO UPDATE SET last_seen=unixepoch()
+	`)
+	stmt.BindText(1, visitor)
+	if _, err = stmt.Step(); err != nil {
+		log.Println(err)
 		return
 	}
-	
-	res.Reactions, _ = GetReaction(conn, res.Video.ID)
-	encoder.Encode(res)
+	stmt.ClearBindings(); stmt.Reset()
+
+	stmt = conn.Prep(`
+		INSERT INTO videos_visitors (visitor_id, video_id)
+		VALUES (?, ?)
+		ON CONFLICT (visitor_id, video_id)
+		DO UPDATE SET number = number + 1
+	`)
+	stmt.BindText(1, visitor)
+	stmt.BindText(2, videoID)
+	if _, err = stmt.Step(); err != nil {
+		log.Println(err)
+		return
+	}
+	stmt.ClearBindings(); stmt.Reset()
 }
+

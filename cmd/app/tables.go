@@ -35,3 +35,9 @@ const CreateTablesIfNotExists = `
 		FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE
 	);
 `
+
+var Migrations = []string{
+	"ALTER TABLE videos_visitors ADD COLUMN number INTEGER DEFAULT 1",
+	"CREATE INDEX idx_visitors_full ON videos_visitors(visitor_id, number, video_id)",
+	"CREATE INDEX idx_videos_views_uploaded ON videos(views, uploaded)",
+}

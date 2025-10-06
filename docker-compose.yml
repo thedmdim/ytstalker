@@ -13,7 +13,7 @@ services:
     volumes:
       - .:/usr/bin/ytstalker/db
     environment:
-      DSN: db/${DSN}
+      API_URL: app/api
       TG_TOKEN: ${TG_TOKEN}
 
   app:
