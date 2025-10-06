@@ -1,4 +1,9 @@
 ytstalker.fun {
-  reverse_proxy app:80
-  tls thedmdim@gmail.com
+    redir https://ytstalker.mov{uri} permanent
+    tls thedmdim@gmail.com
+}
+
+ytstalker.mov {
+    reverse_proxy app:80
+    tls thedmdim@gmail.com
 }
