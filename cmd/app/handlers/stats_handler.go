@@ -20,7 +20,7 @@ type RatedVideo struct {
 	Reactions int64
 }
 
-func (s *Router) GetStats(w http.ResponseWriter, r *http.Request) {
+func (s *Handlers) GetStats(w http.ResponseWriter, r *http.Request) {
 
 	conn := s.db.Get(r.Context())
 	defer s.db.Put(conn)
@@ -47,7 +47,7 @@ func (s *Router) GetStats(w http.ResponseWriter, r *http.Request) {
 	}
 	stats.Total = total
 
-	Templates.ExecuteTemplate(w, "stats.html", stats)
+	s.templates.ExecuteTemplate(w, "stats.html", stats)
 
 }
 

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -13,21 +12,20 @@ import (
 
 	"ytstalker/cmd/app/handlers"
 	"ytstalker/cmd/app/youtube"
+	"github.com/gorilla/mux"
 
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 func main() {
-	
-	handlers.Templates = template.Must(template.ParseGlob("web/*/*.html"))
 
 	// prepare db
 	dsn := os.Getenv("DSN")
 	if dsn == "" {
 		dsn = "server.db"
 	}
-	
+
 	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 100})
 	if err != nil {
 		log.Fatal("cannot open db", err)
@@ -37,6 +35,13 @@ func main() {
 	if err := sqlitex.ExecuteScript(conn, CreateTablesIfNotExists, nil); err != nil {
 		log.Fatal("cannot create db: ", err)
 	}
+
+	for _, q := range Migrations {
+		if err := sqlitex.ExecuteScript(conn, q, nil); err != nil {
+			log.Println("migration error: ", err)
+		}
+	}
+
 	db.Put(conn)
 	log.Println("database ready")
 
@@ -48,40 +53,57 @@ func main() {
 	ytr := youtube.NewYouTubeRequester(ytApiKey)
 
 	// make router
-	handler := handlers.NewRouter(db)
+	handlers := handlers.NewHandlers(db)
+	router := mux.NewRouter()
+
+	// api
+	router.PathPrefix("/api/videos/random").Methods("GET").HandlerFunc(handlers.GetRandom)
+	router.PathPrefix("/api/videos/{video_id}/reactions/{visitor}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(handlers.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
+	router.PathPrefix("/api/videos/{video_id}").Methods("GET").HandlerFunc(handlers.GetVideoData)
+	// pages
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", handlers.CacheHeader(http.FileServer(http.Dir("web/static")))))
+	router.PathPrefix("/stats").Methods("GET").HandlerFunc(handlers.GetStats)
+	router.PathPrefix("/").Methods("GET").HandlerFunc(handlers.GetVideoPage)
+
+	router.Use(handlers.LoggingMiddleware)
+
+
 	server := &http.Server{
-		Handler: handler,
+		Handler: router,
 	}
 
 	// search random video in background
-	go func() {
-		for {
-			results, err := ytr.FindRandomVideos()
-			if err != nil {
-				log.Println("background random search:", err.Error())
-				continue
-			}
-			
-			conn := db.Get(context.Background())
-			err = StoreVideos(conn, results)
-			if err != nil {
-				log.Println("background random search: couldn't store found videos:", err.Error())
-			} else {
-				counters := make(map[int]int)
-				for _, video := range results {
-					year := time.Unix(video.UploadedAt, 0).Year()
-					counters[year]++
+	if os.Getenv("LOCAL") == "" {
+		go func() {
+			for {
+				results, err := ytr.FindRandomVideos()
+				if err != nil {
+					log.Println("background random search:", err.Error())
+					continue
 				}
-				log.Println("background random search:", len(results), "found videos stored:")
-				for year, n := range counters {
-					log.Printf("%d videos from %d\n", n, year)
+	
+				conn := db.Get(context.Background())
+				err = StoreVideos(conn, results)
+				if err != nil {
+					log.Println("background random search: couldn't store found videos:", err.Error())
+				} else {
+					counters := make(map[int]int)
+					for _, video := range results {
+						year := time.Unix(video.UploadedAt, 0).Year()
+						counters[year]++
+					}
+					log.Println("background random search:", len(results), "found videos stored:")
+					for year, n := range counters {
+						log.Printf("%d videos from %d\n", n, year)
+					}
 				}
+				db.Put(conn)
+	
+				time.Sleep(time.Hour / 2)
 			}
-			db.Put(conn)
-
-			time.Sleep(time.Hour / 2)
-		}
-	}()
+		}()
+	}
+	
 
 	// serve 80
 	go func() {
@@ -108,7 +130,6 @@ func main() {
 	}
 	log.Println("successfully closed db", "\n", "thanks :)")
 }
-
 
 func StoreVideos(conn *sqlite.Conn, videos map[string]*youtube.Video) error {
 

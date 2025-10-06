@@ -1,38 +1,29 @@
 package main
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"ytstalker/cmd/app/handlers"
-
 	"github.com/NicoNex/echotron/v3"
-	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 const YouTubeFounded = 2006
-
 const DefaultYear = 2006
+const WebhookURL = "https://ytstalker.mov/webhook/telegram"
+var   apiURL = os.Getenv("API_URL") // localhost/api
+var   token = os.Getenv("TG_TOKEN")
 
 func main() {
-	token := os.Getenv("TG_TOKEN")
 	if token == "" {
 		log.Fatal("no telegram token provided")
-	}
-
-	dsn := os.Getenv("DSN")
-	if dsn == "" {
-		log.Fatal("no dsn provided")
-	}
-	
-	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 50})
-	if err != nil {
-		log.Fatal("cannot open db", err)
 	}
 
 	api := echotron.NewAPI(token)
@@ -44,29 +35,15 @@ func main() {
 
 	for u := range echotron.PollingUpdates(token) {
 
-		visitor :=  strconv.FormatInt(u.ChatID(), 10)
-
 		if u.Message != nil && (u.Message.Text == "/start" || u.Message.Text == "/start@"+me ) {
 
-			sc := &handlers.SearchCriteria{
-				YearsFrom: strconv.Itoa(DefaultYear),
-				YearsTo: strconv.Itoa(DefaultYear),
-			}
-			conn := db.Get(context.Background())
-			video, err := handlers.TakeFirstUnseen(conn, visitor, sc)
-			db.Put(conn)
-			
+			data, err := RequestAPI(u.ChatID(), DefaultYear)
 			if err != nil {
-				log.Println("cannot take video:", err)
+				fmt.Println(err)
 				continue
 			}
 
-			text := "Title: " + video.Title + "\n" +
-					"Views: " + strconv.FormatInt(video.Views, 10) + "\n" +
-					"Uploaded: " + time.Unix(video.UploadedAt, 0).Format("02.01.2006") + "\n" +
-					"\n" + 
-					"https://www.youtube.com/watch?v=" + video.ID
-
+			text := MakeText(data)
 
 			markup := GetKeyboard(DefaultYear)
 			_, err = api.SendMessage(text, u.ChatID(), &echotron.MessageOptions{ReplyMarkup: markup})
@@ -75,12 +52,6 @@ func main() {
 				continue
 			}
 
-			conn = db.Get(context.Background())
-			err = handlers.RememberSeen(conn, visitor, video.ID)
-			db.Put(conn)
-			if err != nil {
-				log.Println("cannot remember seen: ", err)
-			}
 			continue
 		}
 
@@ -92,16 +63,9 @@ func main() {
 				continue
 			}
 
-			
-			sc := &handlers.SearchCriteria{
-				YearsFrom: strconv.Itoa(year),
-				YearsTo: strconv.Itoa(year),
-			}
-			conn := db.Get(context.Background())
-			video, err := handlers.TakeFirstUnseen(conn, visitor, sc)
-			db.Put(conn)
+			data, err := RequestAPI(u.ChatID(), year)
 			if err != nil {
-				log.Println("cannot take video:", err)
+				fmt.Println(err)
 				continue
 			}
 
@@ -113,11 +77,7 @@ func main() {
 				log.Println("cannot remove keyboard from prev message:", err)
 			}
 			
-			text := "Title: " + video.Title + "\n" +
-					"Views: " + strconv.FormatInt(video.Views, 10) + "\n" +
-					"Uploaded: " + time.Unix(video.UploadedAt, 0).Format("02.01.2006") + "\n" +
-					"\n" + 
-					"https://www.youtube.com/watch?v=" + video.ID
+			text := MakeText(data)
 
 			_, err = api.SendMessage(text, u.ChatID(), &echotron.MessageOptions{ReplyMarkup: kb})
 			if err != nil {
@@ -125,12 +85,6 @@ func main() {
 				continue
 			}
 
-			conn = db.Get(context.Background())
-			err = handlers.RememberSeen(conn, visitor, video.ID)
-			db.Put(conn)
-			if err != nil {
-				log.Println("cannot remember seen: ", err)
-			}
 			continue
 		}
 
@@ -180,4 +134,32 @@ func GetKeyboard(year int) echotron.InlineKeyboardMarkup {
 	secondRow := []echotron.InlineKeyboardButton{{Text: "Random", CallbackData: "/random" + strconv.Itoa(year)}}
 
 	return echotron.InlineKeyboardMarkup{InlineKeyboard: [][]echotron.InlineKeyboardButton{firstRow, secondRow}}
+}
+
+func RequestAPI(visitor int64, year int) (handlers.VideoWithReactions, error) {
+	data := handlers.VideoWithReactions{} 
+
+	resp, err := http.Get(fmt.Sprintf("http://%s/videos/random?year=%d&visitor=%d", apiURL, year, visitor))
+	if err != nil {
+		return data, fmt.Errorf("cannot get random id: %w", err)
+	}
+
+	buff := bytes.Buffer{}
+	buff.ReadFrom(resp.Body)
+	resp.Body.Close()
+	resp, err = http.Get(fmt.Sprintf("http://%s/videos/%s?visitor=%d", apiURL, buff.String(), visitor))
+	if err != nil {
+		return data, fmt.Errorf("cannot get video info: %w", err)
+	}
+
+	json.NewDecoder(resp.Body).Decode(&data)
+	return data, nil
+}
+
+func MakeText(data handlers.VideoWithReactions) string {
+	return "Title: " + data.Video.Title + "\n" +
+			"Views: " + strconv.FormatInt(data.Video.Views, 10) + "\n" +
+			"Uploaded: " + time.Unix(data.Video.UploadedAt, 0).Format("02.01.2006") + "\n" +
+			"\n" + 
+			"https://www.youtube.com/watch?v=" + data.Video.ID
 }

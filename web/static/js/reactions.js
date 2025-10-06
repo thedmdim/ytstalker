@@ -1,13 +1,12 @@
-let cool = document.getElementById("cool");
-let trash = document.getElementById("trash");
+const cool = document.getElementById("cool");
+const trash = document.getElementById("trash");
 
 
 function SendCoolReaction(val) {
-    fetch(`/api/videos/${localStorage.getItem('lastSeen')}/${val}`,
-        {
-            method: "POST",
-            headers: {"visitor": localStorage.getItem('visitor')}
-        }
+    // kind of like: /api/videos/uPu3ocdii1/reactions/123423123123/cool
+    fetch(
+        `/api/videos/${localStorage.getItem('lastSeen')}/reactions/${localStorage.getItem('visitor')}/${val}`,
+        { method: "POST" }
     )
     .then(response => response.json())
     .then(data => {
