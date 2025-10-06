@@ -1,7 +1,7 @@
 version: '3.8'
 
 networks:
-  app:
+  ytstalker:
     driver: bridge
 
 services:
@@ -15,6 +15,8 @@ services:
     environment:
       API_URL: app/api
       TG_TOKEN: ${TG_TOKEN}
+    networks:
+      - ytstalker
 
   app:
     container_name: app
@@ -26,7 +28,7 @@ services:
       DSN: db/${DSN}
       YT_API_KEY: ${YT_API_KEY}
     networks:
-      - app
+      - ytstalker
 
   caddy:
     container_name: caddy
@@ -40,4 +42,4 @@ services:
       - ./caddy-data:/data
       - ./Caddyfile:/etc/caddy/Caddyfile
     networks:
-      - app
+      - ytstalker

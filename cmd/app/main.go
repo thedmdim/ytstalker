@@ -58,7 +58,7 @@ func main() {
 
 	// api
 	router.PathPrefix("/api/videos/random").Methods("GET").HandlerFunc(handlers.GetRandom)
-	router.PathPrefix("/api/videos/{video_id}/reactions/{visitor}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(handlers.WriteReaction).HeadersRegexp("visitor", "[0-9]{10,20}")
+	router.PathPrefix("/api/videos/{video_id}/reactions/{visitor}/{reaction:(?:cool|trash)}").Methods("POST").HandlerFunc(handlers.WriteReaction)
 	router.PathPrefix("/api/videos/{video_id}").Methods("GET").HandlerFunc(handlers.GetVideoData)
 	// pages
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", handlers.CacheHeader(http.FileServer(http.Dir("web/static")))))
