@@ -148,7 +148,8 @@ func (h Handlers) GetRandom(w http.ResponseWriter, r *http.Request) {
 		ON videos.id = vv.video_id AND vv.visitor_id = ? 
 	` + ParseQueryParams(params).MakeWhere() + ` 
 		ORDER BY 
-		CASE WHEN vv.visitor_id IS NULL THEN 0 ELSE vv.number END
+		CASE WHEN vv.visitor_id IS NULL THEN 0 ELSE vv.number END,
+		RANDOM()
 		LIMIT 1
 	`
 	
