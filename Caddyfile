@@ -4,9 +4,12 @@ ytstalker.fun {
 }
 
 ytstalker.mov {
-    path_regexp bad (.*\.php|.*wp-.*|/cgi-bin/.*|/uploads/.*|/wp-content/.*|/update/.*|.*\.(zip|tar))
+    
+    @bad {
+        path_regexp bad (.*\.php|.*wp-.*|/cgi-bin/.*|/uploads/.*|/wp-content/.*|/update/.*|.*\.(zip|tar))
+    }
 
-    respond @bad "бро, займись чем-то полезным" 200
+    respond @bad "бро займись чем-то полезным" 200
 
     reverse_proxy app:80
 
