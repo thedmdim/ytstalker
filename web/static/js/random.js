@@ -151,7 +151,6 @@ document.getElementById("random").onclick = async function() {
         this.innerText = "cannot fetch api"
         setTimeout(clearbtn, 2000)
     }
-   
 }
 
 document.getElementById("link").onclick = function() {
