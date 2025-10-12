@@ -154,6 +154,13 @@ document.getElementById("random").onclick = async function() {
    
 }
 
+document.getElementById("link").onclick = function() {
+    navigator.clipboard.writeText(window.location.href);
+    let beforeText = this.innerText
+    this.innerText = "Copied!"
+    setTimeout(() => {this.innerText = beforeText}, 1500)
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     let videoID = localStorage.getItem('lastSeen') || window.location.pathname.replace("/", "")
     if (!videoID) {
