@@ -20,7 +20,7 @@
             {{ range .Best }}
                 <tr>
                     <td>{{ .Reactions }}</td>
-                    <td><a href="/?v={{ .ID }}">{{ .Title }}</a></td>
+                    <td><a href="/{{ .ID }}">{{ .Title }}</a></td>
                 </tr>
             {{end}}
         </table>
