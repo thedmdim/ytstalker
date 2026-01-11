@@ -37,7 +37,12 @@ const CreateTablesIfNotExists = `
 `
 
 var Migrations = []string{
-	"ALTER TABLE videos_visitors ADD COLUMN number INTEGER DEFAULT 1",
-	"CREATE INDEX idx_visitors_full ON videos_visitors(visitor_id, number, video_id)",
-	"CREATE INDEX idx_videos_views_uploaded ON videos(views, uploaded)",
+	"DELETE FROM visitors WHERE last_seen < unixepoch('now', '-3 months');",
+	`DELETE FROM visitors
+		WHERE id IN (
+		SELECT visitor_id
+		FROM videos_visitors
+		GROUP BY visitor_id
+		HAVING COUNT(*) = 1
+	);`,
 }
