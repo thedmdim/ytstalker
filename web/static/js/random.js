@@ -161,7 +161,7 @@ document.getElementById("link").onclick = function() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    let videoID = localStorage.getItem('lastSeen') || window.location.pathname.replace("/", "")
+    let videoID = window.location.pathname.replace("/", "") || localStorage.getItem('lastSeen')
     if (!videoID) {
         videoID = await fetch(`/api/videos/random?visitor=${localStorage.getItem('visitor')}`).then(response => response.text())
     }
