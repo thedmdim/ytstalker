@@ -26,7 +26,7 @@ func main() {
 		dsn = "server.db"
 	}
 
-	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 100})
+	db, err := sqlitex.NewPool(dsn, sqlitex.PoolOptions{PoolSize: 10})
 	if err != nil {
 		log.Fatal("cannot open db", err)
 	}

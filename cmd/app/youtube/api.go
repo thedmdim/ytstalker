@@ -41,6 +41,7 @@ func (y *YouTubeRequester) Search(query string) (*SearchResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	r := new(SearchResponse)
 	json.NewDecoder(res.Body).Decode(r)
@@ -57,6 +58,7 @@ func (y *YouTubeRequester) VideosInfo(ids []string) (*VideosResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	r := new(VideosResponse)
 	json.NewDecoder(res.Body).Decode(r)
