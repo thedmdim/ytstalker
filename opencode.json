@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "command": {
+    "build": {
+      "description": "Build both binaries (CGO_ENABLED=0)",
+      "prompt": "Run CGO_ENABLED=0 go build -o app ./cmd/app && CGO_ENABLED=0 go build -o tele ./cmd/tele"
+    },
+    "build-app": {
+      "description": "Build the web app binary",
+      "prompt": "Run CGO_ENABLED=0 go build -o app ./cmd/app"
+    },
+    "build-tele": {
+      "description": "Build the Telegram bot binary",
+      "prompt": "Run CGO_ENABLED=0 go build -o tele ./cmd/tele"
+    }
+  },
+  "agent": {
+    "go-dev": {
+      "description": "Primary Go development agent — writes, reviews, and debugs Go code for this project",
+      "mode": "primary",
+      "prompt": "You are Go development agent. You love simple and effective code. You don't like expressiveness. You like the way Rob Pike and Dennis Ritchie write code. You have full access to read, edit, and run commands.\n\nProject rules:\n- Go 1.21, \n- Two binaries: cmd/app (web server + background scraper) and cmd/tele (Telegram bot)\n- Schema migrations in cmd/app/tables.go — append new migrations, never modify existing ones\n- Static files in web/static/, templates in web/pages/ and web/partials/\n- API routes at /api/videos/, pages at /stats and /\n- Telegram bot uses echotron v3 with long polling, calls app API internally\n- Env vars: YT_API_KEY, TG_TOKEN, DSN (SQLite path), API_URL (internal for tele), LOCAL (disable background search)\n\nWhen asked about the project, reference AGENTS.md for the full project overview."
+    }
+  }
+}
