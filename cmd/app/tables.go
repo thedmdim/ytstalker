@@ -20,6 +20,7 @@ const CreateTablesIfNotExists = `
 	(	
 		visitor_id STRING,
 		video_id STRING,
+		number INTEGER NOT NULL DEFAULT 1,
 		PRIMARY KEY (visitor_id, video_id),
 		FOREIGN KEY (video_id) REFERENCES videos (id) ON DELETE CASCADE,
 		FOREIGN KEY (visitor_id) REFERENCES visitors (id) ON DELETE CASCADE

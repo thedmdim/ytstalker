@@ -1,23 +1,20 @@
 package handlers
 
 import (
+	"database/sql"
+	"html/template"
 	"log"
 	"net/http"
-
-	"html/template"
-
-	"zombiezen.com/go/sqlite/sqlitex"
 )
 
-// shared to all handlers field
 type Handlers struct {
-	db *sqlitex.Pool
+	db        *sql.DB
 	templates *template.Template
 }
 
-func NewHandlers(db *sqlitex.Pool) Handlers {
+func NewHandlers(db *sql.DB) Handlers {
 	return Handlers{
-		db: db,
+		db:        db,
 		templates: template.Must(template.ParseGlob("web/*/*.html")),
 	}
 }

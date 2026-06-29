@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"zombiezen.com/go/sqlite"
 )
 
 type Message struct {
@@ -89,7 +87,6 @@ func ParseQueryParams(params url.Values) SearchCriteria {
 func (sc SearchCriteria) MakeWhere() string {
 	var conditions []string
 
-
 	if _, err := strconv.Atoi(sc.ViewsFrom); err == nil {
 		conditions = append(conditions, "videos.views >= "+sc.ViewsFrom)
 	}
@@ -122,12 +119,10 @@ func (sc SearchCriteria) MakeWhere() string {
 	return ""
 }
 
-
 func (h Handlers) GetRandom(w http.ResponseWriter, r *http.Request) {
 
 	r.Body.Close()
 
-	// bind params
 	params := r.URL.Query()
 	visitor := params.Get("visitor")
 	if visitor == "" {
@@ -135,44 +130,38 @@ func (h Handlers) GetRandom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn := h.db.Get(context.Background())
-	defer h.db.Put(conn)
-
-	var query string
-	var stmt *sqlite.Stmt
-
-	query = `
-		SELECT videos.id
+	query := `
+	WITH filtered AS (
+		SELECT videos.id, vv.number, vv.visitor_id
 		FROM videos
 		LEFT JOIN videos_visitors vv 
-		ON videos.id = vv.video_id AND vv.visitor_id = ? 
-	` + ParseQueryParams(params).MakeWhere() + ` 
-		ORDER BY 
-		CASE WHEN vv.visitor_id IS NULL THEN 0 ELSE vv.number END,
-		RANDOM()
-		LIMIT 1
-	`
-	
-	stmt = conn.Prep(query)
-	stmt.BindText(1, visitor)
+		ON videos.id = vv.video_id AND vv.visitor_id = ?
+		` + ParseQueryParams(params).MakeWhere() + `
+	),
 
-	row, err := stmt.Step()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !row {
+	ceil AS (SELECT COUNT(*) n FROM filtered)
+
+	SELECT id 
+	FROM filtered
+	ORDER BY CASE WHEN visitor_id IS NULL THEN 0 ELSE number END
+	LIMIT 1 
+	OFFSET (SELECT ABS(RANDOM() % ceil.n) FROM ceil);
+	`
+
+	var videoID string
+	err := h.db.QueryRowContext(r.Context(), query, visitor).Scan(&videoID)
+	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	videoID := stmt.GetText("id")
-	stmt.ClearBindings(); stmt.Reset()
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	_, err = w.Write([]byte(videoID))
 	if err != nil {
 		log.Println(err)
-		return
 	}
 }
-

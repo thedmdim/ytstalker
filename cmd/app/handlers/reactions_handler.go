@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"zombiezen.com/go/sqlite"
 )
 
 type ReactionStats struct {
 	Cools   int64 `json:"cools"`
 	Trashes int64 `json:"trashes"`
 }
-
 
 func (s *Handlers) WriteReaction(w http.ResponseWriter, r *http.Request) {
 
@@ -23,29 +22,23 @@ func (s *Handlers) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	visitor := vars["visitor"]
 	reaction := vars["reaction"]
 
-	conn := s.db.Get(r.Context())
-	defer s.db.Put(conn)
-
-	stmt := conn.Prep(`
-		INSERT INTO reactions (cool, visitor_id, video_id)
-		VALUES(?, ?, ?)
-		ON CONFLICT (visitor_id, video_id)
-		DO UPDATE SET cool=?
-	`)
-
 	var reactionBool bool
 	if reaction == "cool" {
 		reactionBool = true
 	}
 
-	stmt.BindBool(1, reactionBool)
-	stmt.BindText(2, visitor)
-	stmt.BindText(3, videoID)
-	stmt.BindBool(4, reactionBool)
-	stmt.Step()
-	stmt.Reset()
+	_, err := s.db.ExecContext(r.Context(), `
+		INSERT INTO reactions (cool, visitor_id, video_id)
+		VALUES(?, ?, ?)
+		ON CONFLICT (visitor_id, video_id)
+		DO UPDATE SET cool=?
+	`, reactionBool, visitor, videoID, reactionBool)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
 
-	stats, err := GetReaction(conn, videoID)
+	stats, err := GetReaction(s.db, videoID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		return
@@ -53,31 +46,10 @@ func (s *Handlers) WriteReaction(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stats)
 }
 
-func GetReaction(conn *sqlite.Conn, videoID string) (Reactions, error) {
+func GetReaction(db *sql.DB, videoID string) (Reactions, error) {
 	r := Reactions{}
-
-	stmt := conn.Prep(`
-			SELECT SUM(cool = 1) AS cools, SUM(cool = 0) AS trashes
-			FROM reactions
-			WHERE video_id = ?
-	`)
-	stmt.BindText(1, videoID)
-	_, err := stmt.Step()
-	if err != nil {
-		return r, err
-	}
-
-	r.Cools = stmt.GetInt64("cools")
-	r.Trashes = stmt.GetInt64("trashes")
-
-	err = stmt.Reset()
-	if err != nil {
-		return r, err
-	}
-	err = stmt.ClearBindings()
-	if err != nil {
-		return r, err
-	}
-
-	return r, nil
+	err := db.QueryRow(`
+		SELECT SUM(cool = 1), SUM(cool = 0) FROM reactions WHERE video_id = ?
+	`, videoID).Scan(&r.Cools, &r.Trashes)
+	return r, err
 }

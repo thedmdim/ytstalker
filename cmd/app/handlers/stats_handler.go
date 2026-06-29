@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"fmt"
+	"database/sql"
 	"log"
 	"net/http"
-
-	"zombiezen.com/go/sqlite"
 )
 
 type Stats struct {
@@ -22,88 +20,66 @@ type RatedVideo struct {
 
 func (s *Handlers) GetStats(w http.ResponseWriter, r *http.Request) {
 
-	conn := s.db.Get(r.Context())
-	defer s.db.Put(conn)
-
 	var err error
 	stats := &Stats{}
-	stats.Best, err = GetTopRated(conn, true, 10)
+	stats.Best, err = GetTopRated(s.db, true, 10)
 	if err != nil {
 		log.Println("GetTopRated:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	stats.Worst, err = GetTopRated(conn, false, 10)
+	stats.Worst, err = GetTopRated(s.db, false, 10)
 	if err != nil {
 		log.Println("GetTopRated:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	total, err := TotalVideosNum(conn)
+	stats.Total, err = TotalVideosNum(s.db)
 	if err != nil {
-		log.Println("GetTopRated:", err)
+		log.Println("TotalVideosNum:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	stats.Total = total
 
 	s.templates.ExecuteTemplate(w, "stats.html", stats)
-
 }
 
-func TotalVideosNum(conn *sqlite.Conn) (int64, error) {
-	stmt := conn.Prep(`SELECT COUNT(videos.id) total FROM videos`)
-
-	if _, err := stmt.Step(); err != nil {
-		return 0, fmt.Errorf("stmt.ClearBindings: %w", err)
-	}
-	return stmt.GetInt64("total"), stmt.Reset()
+func TotalVideosNum(db *sql.DB) (int64, error) {
+	var total int64
+	err := db.QueryRow(`SELECT COUNT(*) FROM videos`).Scan(&total)
+	return total, err
 }
 
-func GetTopRated(conn *sqlite.Conn, coolRated bool, limit int64) ([]*RatedVideo, error) {
+func GetTopRated(db *sql.DB, coolRated bool, limit int64) ([]*RatedVideo, error) {
 
 	var cool int64
 	if coolRated {
 		cool = 1
 	}
 
-	stmt := conn.Prep(`
-		SELECT SUM(reactions.cool = ?) AS reactions_sum, reactions.video_id, videos.title
+	rows, err := db.Query(`
+		SELECT SUM(reactions.cool = ?), reactions.video_id, videos.title
 		FROM reactions
 		JOIN videos ON videos.id = reactions.video_id
 		GROUP BY reactions.video_id
-		ORDER BY reactions_sum DESC
+		ORDER BY 1 DESC
 		LIMIT ?
-	`)
-
-	stmt.BindInt64(1, cool)
-	stmt.BindInt64(2, limit)
+	`, cool, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
 	var result []*RatedVideo
-	for {
-		row, err := stmt.Step()
-		if err != nil {
+	for rows.Next() {
+		rv := &RatedVideo{}
+		if err := rows.Scan(&rv.Reactions, &rv.ID, &rv.Title); err != nil {
 			return nil, err
 		}
-
-		if row {
-			ratedVideo := &RatedVideo{
-				ID:        stmt.GetText("video_id"),
-				Title:     stmt.GetText("title"),
-				Reactions: stmt.GetInt64("reactions_sum"),
-			}
-			result = append(result, ratedVideo)
-
-		} else {
-			break
-		}
+		result = append(result, rv)
 	}
-
-	if err := stmt.Reset(); err != nil {
-		return nil, fmt.Errorf("stmt.Reset: %w", err)
-	}
-	if err := stmt.ClearBindings(); err != nil {
-		return nil, fmt.Errorf("stmt.ClearBindings: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return result, nil
