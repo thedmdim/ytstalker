@@ -1,20 +1,7 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "plugin": ["openviking-opencode-plugin"],
   "instructions": ["AGENTS.md"],
-  "command": {
-    "build": {
-      "description": "Build both binaries (CGO_ENABLED=0)",
-      "prompt": "Run CGO_ENABLED=0 go build -o app ./cmd/app && CGO_ENABLED=0 go build -o tele ./cmd/tele"
-    },
-    "build-app": {
-      "description": "Build the web app binary",
-      "prompt": "Run CGO_ENABLED=0 go build -o app ./cmd/app"
-    },
-    "build-tele": {
-      "description": "Build the Telegram bot binary",
-      "prompt": "Run CGO_ENABLED=0 go build -o tele ./cmd/tele"
-    }
-  },
   "agent": {
     "go-dev": {
       "description": "Primary Go development agent — writes, reviews, and debugs Go code for this project",

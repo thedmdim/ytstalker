@@ -2,7 +2,7 @@
 
 YouTube random video discovery app with a Telegram bot.
 
-## Binaries (Go 1.21, no CGO)
+## Binaries (Go 1.21)
 
 | Binary | Entrypoint | Description |
 |--------|------------|-------------|
@@ -12,8 +12,8 @@ YouTube random video discovery app with a Telegram bot.
 ## Build
 
 ```sh
-CGO_ENABLED=0 go build -o app  ./cmd/app
-CGO_ENABLED=0 go build -o tele ./cmd/tele
+go build -o app  ./cmd/app
+go build -o tele ./cmd/tele
 ```
 
 No tests, no lint, no typecheck config in repo.
@@ -42,7 +42,7 @@ Set `LOCAL=1` to disable background YouTube search (avoids API quota burn during
 
 ## Architecture
 
-- **SQLite** via `zombiezen.com/go/sqlite` (wraps `modernc.org/sqlite` — pure Go, no CGO). Schema/migrations live inline in `cmd/app/tables.go`.
+- **SQLite** via `mattn/go-sqlite3` (cgo, `database/sql` driver). Schema/migrations live inline in `cmd/app/tables.go`.
 - **Routes** (`cmd/app/main.go:60-66`): API under `/api/videos/`, pages at `/stats` and `/`, static under `/static/`.
 - Background goroutine searches YouTube every 30 min and stores results. Disabled when `LOCAL` is set.
 - Telegram bot polls the app API internally — does **not** call YouTube directly.
