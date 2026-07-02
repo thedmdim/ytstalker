@@ -5,7 +5,7 @@ RUN go mod download
 COPY cmd cmd/
 RUN go build -v -o /usr/bin/ytstalker/app ./cmd/app
 
-FROM gcr.io/distroless/base-debian11
+FROM gcr.io/distroless/base-debian12
 WORKDIR /usr/bin/ytstalker
 COPY web /usr/bin/ytstalker/web/
 COPY --from=builder /usr/bin/ytstalker/app .
