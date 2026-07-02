@@ -7,8 +7,6 @@
 *Now you can just open [ytstalker.mov](https://ytstalker.mov)*
 
 # donate
-
-- [boosty](https://boosty.to/mov3371)
 - bitcoin: `bc1qqkl8ejxrfggs40a29x3ms7eeg9443a44gnykz8`
 
 # socials
