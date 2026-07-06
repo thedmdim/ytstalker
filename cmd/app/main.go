@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"ytstalker/cmd/app/handlers"
-	"ytstalker/cmd/app/db"
+	"ytstalker/cmd/app/dbw"
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 )
