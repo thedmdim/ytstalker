@@ -1,20 +1,21 @@
 package handlers
 
 import (
-	"database/sql"
 	"html/template"
 	"log"
 	"net/http"
+
+	"ytstalker/cmd/app/db"
 )
 
 type Handlers struct {
-	db        *sql.DB
+	db        *db.DBWrapper
 	templates *template.Template
 }
 
-func NewHandlers(db *sql.DB) Handlers {
+func NewHandlers(dbw *db.DBWrapper) Handlers {
 	return Handlers{
-		db:        db,
+		db:        dbw,
 		templates: template.Must(template.ParseGlob("web/*/*.html")),
 	}
 }

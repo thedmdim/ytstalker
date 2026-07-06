@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"ytstalker/cmd/app/handlers"
+	"ytstalker/cmd/app/db"
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -22,25 +22,20 @@ func main() {
 		dsn = "server.db"
 	}
 
-	db, err := sql.Open("sqlite3", dsn)
-	if err != nil {
-		log.Fatal("cannot open db", err)
-	}
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
+	dbw := db.NewDBWrapper(dsn)
 
-	if _, err := db.Exec(CreateTablesIfNotExists); err != nil {
+	if _, err := dbw.Exec(db.CreateTablesIfNotExists); err != nil {
 		log.Fatal("cannot create db: ", err)
 	}
 
-	for _, q := range Migrations {
-		if _, err := db.Exec(q); err != nil {
+	for _, q := range db.Migrations {
+		if _, err := dbw.Exec(q); err != nil {
 			log.Println("migration error: ", err)
 		}
 	}
 	log.Println("database ready")
 
-	handlers := handlers.NewHandlers(db)
+	handlers := handlers.NewHandlers(dbw)
 	router := mux.NewRouter()
 
 	router.PathPrefix("/api/videos/random").Methods("GET").HandlerFunc(handlers.GetRandom)
@@ -73,7 +68,7 @@ func main() {
 
 	log.Println("successfully finished serving")
 
-	err = db.Close()
+	err := dbw.Close()
 	if err != nil {
 		log.Fatalln("error gracefully closing db:", err.Error())
 	}

@@ -30,8 +30,8 @@ func (h Handlers) GetVideoData(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	videoID := vars["video_id"]
 
-	var video VideoWithReactions
-	err := h.db.QueryRowContext(r.Context(), `
+
+	stmt, err := h.db.Prep(`
 		SELECT videos.id, videos.uploaded, videos.title, videos.views,
 		       videos.vertical, videos.category,
 		       COALESCE(SUM(cool = 1), 0),
@@ -39,10 +39,23 @@ func (h Handlers) GetVideoData(w http.ResponseWriter, r *http.Request) {
 		FROM videos
 		LEFT JOIN reactions ON reactions.video_id = videos.id
 		WHERE videos.id = ?
-	`, videoID).Scan(
-		&video.Video.ID, &video.Video.UploadedAt, &video.Video.Title,
-		&video.Video.Views, &video.Video.Vertical, &video.Video.Category,
-		&video.Reactions.Cools, &video.Reactions.Trashes,
+	`)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var video VideoWithReactions
+	err = stmt.QueryRowContext(r.Context(), videoID).Scan(
+		&video.Video.ID,
+		&video.Video.UploadedAt,
+		&video.Video.Title,
+		&video.Video.Views,
+		&video.Video.Vertical,
+		&video.Video.Category,
+		&video.Reactions.Cools,
+		&video.Reactions.Trashes,
 	)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusNotFound)
@@ -58,17 +71,32 @@ func (h Handlers) GetVideoData(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	h.db.Exec(`
+	stmt, err = h.db.Prep(`
 		INSERT INTO visitors (id, last_seen)
 		VALUES(?, unixepoch())
 		ON CONFLICT (id)
 		DO UPDATE SET last_seen=unixepoch()
-	`, visitor)
+	`)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-	h.db.Exec(`
+	_, err = stmt.Exec(visitor)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	stmt, err = h.db.Prep(`
 		INSERT INTO videos_visitors (visitor_id, video_id)
 		VALUES (?, ?)
 		ON CONFLICT (visitor_id, video_id)
 		DO UPDATE SET number = number + 1
-	`, visitor, videoID)
+	`)
+	_, err = stmt.Exec(visitor, videoID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }

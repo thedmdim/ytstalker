@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -27,29 +26,38 @@ func (s *Handlers) WriteReaction(w http.ResponseWriter, r *http.Request) {
 		reactionBool = true
 	}
 
-	_, err := s.db.ExecContext(r.Context(), `
+	stmt, err := s.db.Prep(`
 		INSERT INTO reactions (cool, visitor_id, video_id)
 		VALUES(?, ?, ?)
 		ON CONFLICT (visitor_id, video_id)
 		DO UPDATE SET cool=?
-	`, reactionBool, visitor, videoID, reactionBool)
+	`)
+
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
 
-	stats, err := GetReaction(s.db, videoID)
+	_, err = stmt.ExecContext(r.Context(), reactionBool, visitor, videoID, reactionBool)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
+
+
+	stmt, err = s.db.Prep("SELECT SUM(cool = 1), SUM(cool = 0) FROM reactions WHERE video_id = ?")
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
+
+	stats := Reactions{}
+	err = stmt.QueryRowContext(r.Context(), videoID).Scan(&stats.Cools, &stats.Trashes)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
+	
 	json.NewEncoder(w).Encode(stats)
-}
-
-func GetReaction(db *sql.DB, videoID string) (Reactions, error) {
-	r := Reactions{}
-	err := db.QueryRow(`
-		SELECT SUM(cool = 1), SUM(cool = 0) FROM reactions WHERE video_id = ?
-	`, videoID).Scan(&r.Cools, &r.Trashes)
-	return r, err
 }

@@ -131,25 +131,32 @@ func (h Handlers) GetRandom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-	WITH filtered AS (
-		SELECT videos.id, vv.number, vv.visitor_id
-		FROM videos
-		LEFT JOIN videos_visitors vv 
-		ON videos.id = vv.video_id AND vv.visitor_id = ?
-		` + ParseQueryParams(params).MakeWhere() + `
-	),
+		WITH filtered AS (
+			SELECT videos.id, vv.number, vv.visitor_id
+			FROM videos
+			LEFT JOIN videos_visitors vv 
+			ON videos.id = vv.video_id AND vv.visitor_id = ?
+			` + ParseQueryParams(params).MakeWhere() + `
+		),
 
-	ceil AS (SELECT COUNT(*) n FROM filtered)
+		ceil AS (SELECT COUNT(*) n FROM filtered)
 
-	SELECT id 
-	FROM filtered
-	ORDER BY CASE WHEN visitor_id IS NULL THEN 0 ELSE number END
-	LIMIT 1 
-	OFFSET (SELECT ABS(RANDOM() % ceil.n) FROM ceil);
+		SELECT id 
+		FROM filtered
+		ORDER BY CASE WHEN visitor_id IS NULL THEN 0 ELSE number END
+		LIMIT 1 
+		OFFSET (SELECT ABS(RANDOM() % ceil.n) FROM ceil);
 	`
 
 	var videoID string
-	err := h.db.QueryRowContext(r.Context(), query, visitor).Scan(&videoID)
+	stmt, err := h.db.Prep(query)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = stmt.QueryRowContext(r.Context(), visitor).Scan(&videoID)
 	if err == sql.ErrNoRows {
 		w.WriteHeader(http.StatusNotFound)
 		return
