@@ -12,7 +12,7 @@ import (
 	"ytstalker/cmd/app/handlers"
 	"ytstalker/cmd/app/dbw"
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"
 )
 
 func main() {
