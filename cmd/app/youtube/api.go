@@ -1,3 +1,5 @@
+// youtube forbed using inurl search op
+// so this api wrapper isn't used anymore
 package youtube
 
 import (

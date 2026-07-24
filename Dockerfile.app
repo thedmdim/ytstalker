@@ -1,7 +1,7 @@
-FROM golang:1.23 as builder
+FROM golang:1.26.4 as builder
 WORKDIR /usr/src/ytstalker
 COPY go.mod go.sum .
-RUN go mod download
+RUN go mod tidy
 COPY cmd cmd/
 RUN go build -v -o /usr/bin/ytstalker/app ./cmd/app
 
