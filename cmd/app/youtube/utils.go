@@ -106,8 +106,6 @@ func (y *YouTubeRequester) FindRandomVideos() (map[string]*Video, error) {
 	return results, nil
 }
 
-
-
 const base64range string = "0123456789abcdefghijklmnopqrstuvwxyz-_"
 
 func RandomYoutubeVideoId(length int) string {
