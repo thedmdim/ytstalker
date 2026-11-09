@@ -2,4 +2,4 @@ conf.json
 *db
 *db-shm
 *db-wal
-haproxy
+.DS_Store
